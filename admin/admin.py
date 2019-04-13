@@ -1,7 +1,7 @@
 from discord import User, Member, Embed, Guild
 from discord.ext.commands import Cog, Context, command
 
-import bot_database
+from data import bot_database
 
 
 class AdminCommands(Cog):

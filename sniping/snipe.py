@@ -2,7 +2,7 @@ from discord import User, Member, Embed, Guild
 from discord.ext import commands
 from discord.ext.commands import Context
 
-import bot_database
+from data import bot_database
 
 
 class Snipes(commands.Cog):

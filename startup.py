@@ -1,7 +1,7 @@
 from discord.ext.commands import Bot, Context, has_permissions, MissingPermissions
 
-from snipe import Snipes
-from admin import AdminCommands
+from sniping.snipe import Snipes
+from admin.admin import AdminCommands
 
 
 TOKEN = 'NTY2MDU0MTYzNDk5NDUwMzk5.XK_aKg.-dGUgE3J1JgnJaVrnEJS8gFQDKw'
