@@ -11,7 +11,8 @@ class Snipes(commands.Cog):
 
     # Returns a user's points or snipes
 
-    @commands.command(name='points')
+    @commands.command(name='Points', brief='Returns the calling user\'s points (or snipes)', 
+        help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
     async def getPoints(self, ctx: Context):
         channel = ctx.message.channel
         author = ctx.message.author
@@ -27,7 +28,7 @@ class Snipes(commands.Cog):
                 return m.content == 'Y' and m.channel == channel and m.author.id == author.id
 
             await ctx.send("User has not been registered, would you like to register? (Y/N)")
-            
+
             try:
                 response = await self.bot.wait_for('message', check=check, timeout=20)
             except:
@@ -43,7 +44,8 @@ class Snipes(commands.Cog):
 
     # Registers a snipe with snipe bot
 
-    @commands.command(name='snipe')
+    @commands.command(name='Snipe', brief='Registers a snipe from the calling user to the mentioned user', usage='<@TargetUser>',
+        help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipeUser(self, ctx: Context, loser: Member):
         if bot_database.addSnipe(ctx.author.id, loser.id):
             await ctx.send('SNIPED! {} has sniped {}.'.format(ctx.author.nick, loser.nick))
@@ -52,7 +54,7 @@ class Snipes(commands.Cog):
 
     # Returns the current leaderboard
 
-    @commands.command(name='Leaderboard')
+    @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: Context):
         rows = bot_database.getLeaderboard()
 
