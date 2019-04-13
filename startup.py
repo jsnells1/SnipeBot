@@ -10,7 +10,7 @@ BOT_PREFIX = "!"
 bot = Bot(command_prefix=BOT_PREFIX, case_insensitive=True)
 
 
-@bot.command(name='StopSniping')
+@bot.command(name='q2')
 async def kill(ctx: Context):
     await bot.logout()
 

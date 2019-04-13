@@ -2,17 +2,25 @@ import sqlite3
 
 
 def getUserPoints(userId):
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
 
-    c.execute('SELECT Snipes FROM Scores WHERE UserID = {}'.format(userId))
+        c.execute('SELECT Snipes FROM Scores WHERE UserID = {}'.format(userId))
 
-    row = c.fetchone()
+        row = c.fetchone()
 
-    if row is None:
-        return None
-    else:
-        return row[0]
+        if row is None:
+            return None
+        else:
+            return row[0]
+    
+    except:
+        return False
+
+    finally:
+        conn.close()
+
 
 
 def registerUser(userId):
@@ -38,9 +46,16 @@ def addSnipe(winner, loser):
         c = conn.cursor()
 
         c.execute(
+            'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(winner))
+
+        c.execute(
+            'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
+
+        c.execute(
             'UPDATE Scores SET Snipes = Snipes + 1 WHERE UserID = {}'.format(winner))
         c.execute(
             'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
+        
         conn.commit()
 
         return True
@@ -58,8 +73,11 @@ def getLeaderboard():
         c = conn.cursor()
 
         rows = c.execute('SELECT * FROM Scores LIMIT 10').fetchall()
-        
+
         return rows
 
     except:
         return False
+
+    finally:
+        conn.close()

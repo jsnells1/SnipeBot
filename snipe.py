@@ -1,13 +1,15 @@
-from discord import User
-from discord import Member
+from discord import User, Member, Embed, Guild
 from discord.ext import commands
 from discord.ext.commands import Context
 
 import bot_database
 
+
 class Snipes(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    # Returns a user's points or snipes
 
     @commands.command(name='points')
     async def getPoints(self, ctx: Context):
@@ -16,49 +18,59 @@ class Snipes(commands.Cog):
 
         points = bot_database.getUserPoints(author.id)
 
+        if not points:
+            await ctx.send("Error retrieving points...")
+
         if points is None:
 
             def check(m):
                 return m.content == 'Y' and m.channel == channel and m.author.id == author.id
 
             await ctx.send("User has not been registered, would you like to register? (Y/N)")
-            response = await self.bot.wait_for('message', check=check)
+            
+            try:
+                response = await self.bot.wait_for('message', check=check, timeout=20)
+            except:
+                await ctx.send("Timeout reached. User not registered.")
+                return
 
             if response:
                 bot_database.registerUser(ctx.author.id)
-                await ctx.send("User registered hopefully")
+                await ctx.send("User registered successfully!")
 
         else:
             await ctx.send("{} you have {} point(s)".format(author.mention, points))
 
+    # Registers a snipe with snipe bot
+
     @commands.command(name='snipe')
-    async def snipeUser(self, ctx: Context, winner: Member, loser: Member):
-        if bot_database.addSnipe(winner.id, loser.id):
-            await ctx.send('SNIPED! {} has sniped {}.'.format(winner.nick, loser.nick))
+    async def snipeUser(self, ctx: Context, loser: Member):
+        if bot_database.addSnipe(ctx.author.id, loser.id):
+            await ctx.send('SNIPED! {} has sniped {}.'.format(ctx.author.nick, loser.nick))
         else:
             await ctx.send('Snipe failed to register.. Error')
 
+    # Returns the current leaderboard
 
     @commands.command(name='Leaderboard')
     async def leaderboard(self, ctx: Context):
         rows = bot_database.getLeaderboard()
-        returnStr = '```Current Leaderboard: \n' + 'Name                Snipes         Deaths\n'
 
-        for row in rows:
-            user = await self.bot.fetch_user(row[0])
+        names = ''
+        snipes = ''
+        deaths = ''
 
-            spaces = 20 - len(user.display_name)
+        for i, row in enumerate(rows):
+            user = ctx.guild.get_member(int(row[0]))
 
-            returnStr += user.display_name
-            for _ in range(spaces):
-                returnStr += ' '
+            names += str(i + 1) + '. ' + user.nick + '\n'
+            snipes += str(row[1]) + '\n'
+            deaths += str(row[2]) + '\n'
 
-            returnStr += str(row[1])
-
-            for _ in range(14):
-                returnStr += ' '
-
-            returnStr += str(row[2]) + '\n'
-
-        await ctx.send(returnStr + '```')
-
+        embed = Embed(title='Current Leaderboard (Top 10):', color=0x0000ff)
+        embed.set_author(name='Here are the standings...',
+                         icon_url='https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Trophy_Flat_Icon.svg/512px-Trophy_Flat_Icon.svg.png')
+        embed.add_field(name='Position/Name', value=names, inline=True)
+        embed.add_field(name='Snipes', value=snipes, inline=True)
+        embed.add_field(name='Deaths', value=deaths)
+        await ctx.send('', embed=embed)
