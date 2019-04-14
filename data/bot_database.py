@@ -1,135 +1,159 @@
 import sqlite3
+from enum import Enum
 
 
-def getUserPoints(userId):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+class Environment (Enum):
+    dev = 1
+    live = 2
 
-        c.execute('SELECT Snipes FROM Scores WHERE UserID = {}'.format(userId))
 
-        row = c.fetchone()
+class BotDatabase():
 
-        if row is None:
-            return None
-        else:
-            return row[0]
+    LIVE_DATABASE = './data/database.db'
+    DEV_DATABASE = './data/dev_database.db'
 
-    except:
+    DATABASE = DEV_DATABASE
+
+    def __init__(self):
+        pass
+
+    def switchDatabase(self, env):
+
+        if env == Environment.live:
+            BotDatabase.DATABASE = BotDatabase.LIVE_DATABASE
+            return True
+        elif env == Environment.dev:
+            BotDatabase.DATABASE = BotDatabase.DEV_DATABASE
+            return True
+
         return False
 
-    finally:
-        conn.close()
+    def getUserPoints(self, userId):
+        try:
+            conn = sqlite3.connect(BotDatabase.DATABASE)
+            c = conn.cursor()
 
+            c.execute(
+                'SELECT Snipes FROM Scores WHERE UserID = {}'.format(userId))
 
-def registerUser(userId):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+            row = c.fetchone()
 
-        c.execute('INSERT INTO Scores (UserID) VALUES ({})'.format(userId))
-        conn.commit()
+            if row is None:
+                return None
+            else:
+                return row[0]
 
-        return True
+        except:
+            return False
 
-    except:
-        return False
+        finally:
+            conn.close()
 
-    finally:
-        conn.close()
+    def registerUser(self, userId):
+        try:
+            conn = sqlite3.connect(BotDatabase.DATABASE)
+            c = conn.cursor()
 
+            c.execute('INSERT INTO Scores (UserID) VALUES ({})'.format(userId))
+            conn.commit()
 
-def addSnipe(winner, loser):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+            return True
 
-        c.execute(
-            'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(winner))
+        except:
+            return False
 
-        c.execute(
-            'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
+        finally:
+            conn.close()
 
-        c.execute(
-            'UPDATE Scores SET Snipes = Snipes + 1 WHERE UserID = {}'.format(winner))
-        c.execute(
-            'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
+    def addSnipe(self, winner, loser):
+        try:
+            conn = sqlite3.connect(BotDatabase.DATABASE)
+            c = conn.cursor()
 
-        conn.commit()
+            c.execute(
+                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(winner))
 
-        return True
+            c.execute(
+                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
 
-    except:
-        return False
+            c.execute(
+                'UPDATE Scores SET Snipes = Snipes + 1 WHERE UserID = {}'.format(winner))
+            c.execute(
+                'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
 
-    finally:
-        conn.close()
+            conn.commit()
 
+            return True
 
-def getLeaderboard():
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+        except:
+            return False
 
-        rows = c.execute('SELECT * FROM Scores LIMIT 10').fetchall()
+        finally:
+            conn.close()
 
-        return rows
+    def getLeaderboard(self):
 
-    except:
-        return False
+        try:
+            conn = sqlite3.connect(BotDatabase.DATABASE)
+            c = conn.cursor()
 
-    finally:
-        conn.close()
+            rows = c.execute(
+                'SELECT * FROM Scores ORDER BY Snipes DESC, Deaths ASC LIMIT 10').fetchall()
 
+            return rows
 
-def removeUser(userId):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+        except:
+            return False
 
-        c.execute('DELETE FROM Scores WHERE UserID = {}'.format(userId))
-        conn.commit()
+        finally:
+            conn.close()
 
-        return True
+    def removeUser(self, userId):
+        try:
+            conn = sqlite3.connect(BotDatabase.DATABASE)
+            c = conn.cursor()
 
-    except:
-        return False
+            c.execute('DELETE FROM Scores WHERE UserID = {}'.format(userId))
+            conn.commit()
 
-    finally:
-        conn.close()
+            return True
 
+        except:
+            return False
 
-def setSnipes(userId, amt):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+        finally:
+            conn.close()
 
-        c.execute(
-            'UPDATE Scores SET Snipes = {} WHERE UserID = {}'.format(amt, userId))
-        conn.commit()
+    def setSnipes(self, userId, amt):
+        try:
+            conn = sqlite3.connect(BotDatabase.DATABASE)
+            c = conn.cursor()
 
-        return True
+            c.execute(
+                'UPDATE Scores SET Snipes = {} WHERE UserID = {}'.format(amt, userId))
+            conn.commit()
 
-    except:
-        return False
+            return True
 
-    finally:
-        conn.close()
+        except:
+            return False
 
+        finally:
+            conn.close()
 
-def setDeaths(userId, amt):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+    def setDeaths(self, userId, amt):
+        try:
+            conn = sqlite3.connect(BotDatabase.DATABASE)
+            c = conn.cursor()
 
-        c.execute(
-            'UPDATE Scores SET Deaths = {} WHERE UserID = {}'.format(amt, userId))
-        conn.commit()
+            c.execute(
+                'UPDATE Scores SET Deaths = {} WHERE UserID = {}'.format(amt, userId))
+            conn.commit()
 
-        return True
+            return True
 
-    except:
-        return False
+        except:
+            return False
 
-    finally:
-        conn.close()
+        finally:
+            conn.close()

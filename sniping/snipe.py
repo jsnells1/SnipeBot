@@ -1,23 +1,22 @@
 from discord import User, Member, Embed, Guild
-from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Context, Cog, command
 
-from data import bot_database
+from data.bot_database import BotDatabase
 
 
-class Snipes(commands.Cog):
+class Snipes(Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # Returns a user's points or snipes
 
-    @commands.command(name='Points', brief='Returns the calling user\'s points (or snipes)', 
-        help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
+    @command(name='Points', brief='Returns the calling user\'s points (or snipes)',
+             help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
     async def getPoints(self, ctx: Context):
         channel = ctx.message.channel
         author = ctx.message.author
 
-        points = bot_database.getUserPoints(author.id)
+        points = BotDatabase().getUserPoints(author.id)
 
         if not points:
             await ctx.send("Error retrieving points...")
@@ -36,7 +35,7 @@ class Snipes(commands.Cog):
                 return
 
             if response:
-                bot_database.registerUser(ctx.author.id)
+                BotDatabase().registerUser(ctx.author.id)
                 await ctx.send("User registered successfully!")
 
         else:
@@ -44,19 +43,51 @@ class Snipes(commands.Cog):
 
     # Registers a snipe with snipe bot
 
-    @commands.command(name='Snipe', brief='Registers a snipe from the calling user to the mentioned user', usage='<@TargetUser>',
-        help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
-    async def snipeUser(self, ctx: Context, loser: Member):
-        if bot_database.addSnipe(ctx.author.id, loser.id):
-            await ctx.send('SNIPED! {} has sniped {}.'.format(ctx.author.nick, loser.nick))
-        else:
-            await ctx.send('Snipe failed to register.. Error')
+    @command(name='Snipe', brief='Registers a snipe from the calling user to the mentioned user', usage='<@TargetUser>',
+             help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
+    async def snipeUser(self, ctx: Context, *losers: Member):
+
+        if len(losers) == 0:
+            await ctx.send('To snipe a user, type !snipe <@Target>. You can snipe multiple users by typing !snipe <@Target1> <@Target2> etc..')
+            return
+
+        hits = []
+        errors = []
+
+        for loser in losers:
+
+            if BotDatabase().addSnipe(ctx.author.id, loser.id):
+                hits.append(loser.nick)
+            else:
+                errors.append(loser.nick)
+                await ctx.send('Snipe failed to register.. Error')
+
+        returnStr = ''
+
+        if len(hits) == 1:
+            returnStr = 'SNIPED! {} has sniped {}! '.format(
+                ctx.author.nick, hits[0])
+        elif len(hits) > 1:
+            returnStr = 'SNIPED! {} has sniped {}! '.format(
+                ctx.author.nick, ', '.join(hits[:-1]) + ' and ' + hits[-1])
+
+        if len(errors) == 1:
+            returnStr += 'Error registering hit on {}.'.format(errors[0])
+        elif len(errors) > 1:
+            returnStr += 'Error registering hit on {}.'.format(
+                ', '.join(errors[:-1]) + ' and ' + errors[-1])
+
+        await ctx.send(returnStr)
 
     # Returns the current leaderboard
 
-    @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
+    @command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: Context):
-        rows = bot_database.getLeaderboard()
+        rows = BotDatabase().getLeaderboard()
+
+        if not rows:
+            await ctx.send('```Error retrieving leaderboard```')
+            return
 
         names = ''
         snipes = ''

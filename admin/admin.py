@@ -1,20 +1,17 @@
 from discord import User, Member, Embed, Guild
-from discord.ext.commands import Cog, Context, command
+from discord.ext.commands import Cog, Context, command, is_owner
 
-from data import bot_database
+from data.bot_database import BotDatabase
 
 
 class AdminCommands(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.OWNER_ID = 273946109896818701
-
-    def check_if_owner(self, ctx: Context):
-        return ctx.message.author.id == self.OWNER_ID
 
     @command(name='RemoveUser', hidden=True)
+    @is_owner()
     async def removeUser(self, ctx: Context, user: Member):
-        response = bot_database.removeUser(user.id)
+        response = BotDatabase().removeUser(user.id)
 
         msg = '```User succesfully deleted.```'
 
@@ -23,9 +20,22 @@ class AdminCommands(Cog):
 
         await ctx.send(msg)
 
+    @command(name='RegisterUser', hidden=True)
+    @is_owner()
+    async def registerUser(self, ctx: Context, user: Member):
+        response = BotDatabase().registerUser(user.id)
+
+        msg = '```User succesfully added.```'
+
+        if not response:
+            msg = '```Potential Error - User could not be added.```'
+
+        await ctx.send(msg)
+
     @command(name='SetSnipes', hidden=True)
+    @is_owner()
     async def setSnipes(self, ctx: Context, user: Member, amount: int):
-        response = bot_database.setSnipes(user.id, amount)
+        response = BotDatabase().setSnipes(user.id, amount)
 
         msg = '```User snipes updated.```'
 
@@ -35,8 +45,9 @@ class AdminCommands(Cog):
         await ctx.send(msg)
 
     @command(name='SetDeaths', hidden=True)
+    @is_owner()
     async def setDeaths(self, ctx: Context, user: Member, amount: int):
-        response = bot_database.setDeaths(user.id, amount)
+        response = BotDatabase().setDeaths(user.id, amount)
 
         msg = '```User deaths updated.```'
 
