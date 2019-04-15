@@ -1,7 +1,8 @@
 from discord import User, Member, Embed, Guild
 from discord.ext.commands import Cog, Context, command, is_owner, has_permissions
 
-from data.code.bot_database import BotDatabase, Environment
+from data import code
+from data.code import Environment
 
 
 class AdminCommands(Cog):
@@ -26,8 +27,8 @@ class AdminCommands(Cog):
             return
 
         if response.content == 'Y' or response.content == 'y':
-            success = BotDatabase().removeUser(member.id)
-
+            success = code.removeUser(member.id)
+            
             if success:
                 await ctx.send('```User removed.```')
             else:
@@ -38,7 +39,7 @@ class AdminCommands(Cog):
     @command(name='RegisterUser', hidden=True)
     @is_owner()
     async def registerUser(self, ctx: Context, user: Member):
-        response = BotDatabase().registerUser(user.id)
+        response = code.registerUser(user.id)
 
         msg = '```User succesfully added.```'
 
@@ -50,7 +51,7 @@ class AdminCommands(Cog):
     @command(name='SetSnipes', hidden=True)
     @is_owner()
     async def setSnipes(self, ctx: Context, user: Member, amount: int):
-        response = BotDatabase().setSnipes(user.id, amount)
+        response = code.setSnipes(user.id, amount)
 
         msg = '```User snipes updated.```'
 
@@ -62,7 +63,7 @@ class AdminCommands(Cog):
     @command(name='SetDeaths', hidden=True)
     @is_owner()
     async def setDeaths(self, ctx: Context, user: Member, amount: int):
-        response = BotDatabase().setDeaths(user.id, amount)
+        response = code.setDeaths(user.id, amount)
 
         msg = '```User deaths updated.```'
 
@@ -87,7 +88,7 @@ class AdminCommands(Cog):
             await ctx.send('Invalid argument.')
             return
 
-        response = BotDatabase().switchDatabase(dbEnv)
+        response = code.switchDatabase(dbEnv)
 
         if response:
             await ctx.send('Database successfully changed.')
@@ -97,8 +98,8 @@ class AdminCommands(Cog):
     @command(name='db_environment', hidden=True)
     @has_permissions(ban_members=True)
     async def getDBEnvironment(self, ctx: Context, env=None):
-        
-        if BotDatabase().DATABASE == BotDatabase().DEV_DATABASE:
+
+        if code.DATABASE == code.DEV_DATABASE:
             await ctx.send('```Dev```')
         else:
             await ctx.send('```Live```')

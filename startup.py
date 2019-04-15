@@ -4,8 +4,6 @@ from sniping.snipe import Snipes
 from admin.admin import AdminCommands
 from soapbox.soapbox import Soapbox
 
-from data.code.bot_database import BotDatabase, Environment
-
 TOKEN = 'NTY2MDU0MTYzNDk5NDUwMzk5.XK_aKg.-dGUgE3J1JgnJaVrnEJS8gFQDKw'
 BOT_PREFIX = "!"
 

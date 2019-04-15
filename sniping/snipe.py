@@ -1,7 +1,8 @@
 from discord import User, Member, Embed, Guild
 from discord.ext.commands import Context, Cog, command, has_permissions
 
-from data.code.bot_database import BotDatabase
+from data import code
+from data.code import Environment
 
 
 class Snipes(Cog):
@@ -14,20 +15,19 @@ class Snipes(Cog):
              help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
     async def getPoints(self, ctx: Context):
         author = ctx.message.author
-
-        points = BotDatabase().getUserPoints(author.id)
-
+        points = code.getUserPoints(author.id)
+        
         if not points:
             await ctx.send("Error retrieving points...")
 
         if points is None:
-            success = BotDatabase().registerUser(ctx.author.id)
+            success = code.registerUser(ctx.author.id)
 
             if not success:
                 await ctx.send('User was not found and failed to be registered.')
                 return
             else:
-                points = BotDatabase().getUserPoints(author.id)
+                points = code.getUserPoints(author.id)
 
         await ctx.send("{} you have {} point(s)".format(author.mention, points))
 
@@ -46,7 +46,7 @@ class Snipes(Cog):
 
         for loser in losers:
 
-            if BotDatabase().addSnipe(ctx.author.id, loser.id):
+            if code.addSnipe(ctx.author.id, loser.id):
                 hits.append(loser.nick)
             else:
                 errors.append(loser.nick)
@@ -73,7 +73,7 @@ class Snipes(Cog):
 
     @command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: Context):
-        rows = BotDatabase().getLeaderboard()
+        rows = code.getLeaderboard()
         if not rows:
             await ctx.send('```Error retrieving leaderboard```')
             return

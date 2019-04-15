@@ -2,7 +2,8 @@ from discord import Embed
 from discord.ext.commands import Cog, Context, command, has_permissions
 from datetime import datetime
 
-from data.code.bot_database import BotDatabase
+from data import code
+from data.code import Environment
 
 
 class Soapbox(Cog):
@@ -11,7 +12,7 @@ class Soapbox(Cog):
 
     @command(name='soapbox_schedule', brief="Returns the current soapbox schedule")
     async def getSchedule(self, ctx: Context):
-        response = BotDatabase().getSoapboxSchedule()
+        response = code.getSoapboxSchedule()
 
         if not response:
             await ctx.send('Error retrieving Soapbox Schedule.')
@@ -56,7 +57,7 @@ class Soapbox(Cog):
             await ctx.send('```Cannot create soapbox: Date should be in the format of Month/Day\nExample:\n\t4/11```')
             return
 
-        response = BotDatabase().createSoapbox(name, date, topic)
+        response = code.createSoapbox(name, date, topic)
 
         if response:
             await ctx.send('Soapbox created!')
@@ -67,7 +68,7 @@ class Soapbox(Cog):
              help="Deletes the entry specified with the id argument")
     @has_permissions(ban_members=True)
     async def deleteEntry(self, ctx: Context, id):
-        info, row = BotDatabase().getSoapboxEntry(id)
+        info, row = code.getSoapboxEntry(id)
 
         if row is None or not row:
             await ctx.send('```Could not find entry with id {}```'.format(id))
@@ -94,7 +95,7 @@ class Soapbox(Cog):
             return
 
         if response.content == 'Y' or response.content == 'y':
-            success = BotDatabase().deleteSoapboxEntry(row[0])
+            success = code.deleteSoapboxEntry(row[0])
 
             if success:
                 await ctx.send('```Record deleted.```')
@@ -130,7 +131,7 @@ class Soapbox(Cog):
             await ctx.send('```Cannot update soapbox: Date should be in the format of Month/Day\nExample:\n\t4/11```')
             return
 
-        info, row = BotDatabase().getSoapboxEntry(id)
+        info, row = code.getSoapboxEntry(id)
 
         if row is None or not row:
             await ctx.send('```Could not find entry with id {}```'.format(id))
@@ -159,7 +160,7 @@ class Soapbox(Cog):
             return
 
         if response.content == 'Y' or response.content == 'y':
-            success = BotDatabase().updateSoapboxTopic(
+            success = code.updateSoapboxTopic(
                 userInput[0], userInput[1], date, userInput[3])
 
             if success:
