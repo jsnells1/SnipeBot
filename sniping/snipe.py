@@ -74,26 +74,48 @@ class Snipes(Cog):
     @command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: Context):
         rows = BotDatabase().getLeaderboard()
-
         if not rows:
             await ctx.send('```Error retrieving leaderboard```')
             return
 
-        names = ''
-        snipes = ''
-        deaths = ''
+        _padding = 3
+        _paddingString = ' ' * _padding
+        _userColName = 'Name'
+        _snipesColName = 'S'
+        _deathsColName = 'D'
+
+        nameColLength = len(_userColName)
+        snipeColLength = len(_snipesColName)
+        deathColLength = len(_deathsColName)
 
         for i, row in enumerate(rows):
             user = ctx.guild.get_member(int(row[0]))
 
-            names += str(i + 1) + '. ' + user.nick + '\n'
-            snipes += str(row[1]) + '\n'
-            deaths += str(row[2]) + '\n'
+            nameColLength = max(nameColLength, len(
+                str(i + 1) + '. ' + user.nick[0:10]))
 
-        embed = Embed(title='Current Leaderboard (Top 10):', color=0x0000ff)
-        embed.set_author(name='Here are the standings...',
-                         icon_url='https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Trophy_Flat_Icon.svg/512px-Trophy_Flat_Icon.svg.png')
-        embed.add_field(name='Position/Name', value=names, inline=True)
-        embed.add_field(name='Snipes', value=snipes, inline=True)
-        embed.add_field(name='Deaths', value=deaths)
-        await ctx.send('', embed=embed)
+            snipeColLength = max(snipeColLength, len(str(row[1])))
+            deathColLength = max(deathColLength, len(str(row[2])))
+
+        output = _userColName + _paddingString + \
+            ((nameColLength - len(_userColName)) * ' ')
+        output += _snipesColName + _paddingString + \
+            ((snipeColLength - len(_snipesColName)) * ' ')
+        output += _deathsColName + _paddingString + \
+            ((deathColLength - len(_deathsColName)) * ' ') + '\n'
+        output += '-' * (_padding * 2 + nameColLength +
+                         snipeColLength + deathColLength) + '\n'
+
+        for i, row in enumerate(rows):
+            user = ctx.guild.get_member(int(row[0]))
+
+            name = str(i + 1) + '. ' + user.nick[0:10]
+
+            output += name + _paddingString + \
+                ((nameColLength - len(name)) * ' ')
+            output += str(row[1]) + _paddingString + \
+                ((snipeColLength - len(str(row[1]))) * ' ')
+            output += str(row[2]) + _paddingString + \
+                ((deathColLength - len(str(row[2]))) * ' ') + '\n'
+
+        await ctx.send('```' + output + '```')
