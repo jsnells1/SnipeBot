@@ -37,6 +37,8 @@ class Snipes(Cog):
             if response:
                 BotDatabase().registerUser(ctx.author.id)
                 await ctx.send("User registered successfully!")
+            else:
+                await ctx.send('User not registered.')
 
         else:
             await ctx.send("{} you have {} point(s)".format(author.mention, points))

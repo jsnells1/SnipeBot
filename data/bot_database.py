@@ -1,5 +1,6 @@
 import sqlite3
 from enum import Enum
+from datetime import datetime
 
 
 class Environment (Enum):
@@ -157,3 +158,55 @@ class BotDatabase():
 
         finally:
             conn.close()
+
+    def createSoapbox(self, name, timestamp, topic):
+        try:
+            with sqlite3.connect(BotDatabase.DATABASE) as conn:
+                conn.execute(
+                    'INSERT INTO Soapbox (Presenter, Topic, Date) VALUES (\'{}\', \'{}\', {})'.format(name, topic, timestamp))
+                conn.commit()
+                return True
+        except:
+            return False
+
+    def getSoapboxSchedule(self):
+        try:
+            with sqlite3.connect(BotDatabase.DATABASE) as conn:
+                rows = conn.execute(
+                    'SELECT * FROM Soapbox ORDER BY Date ASC').fetchall()
+                conn.commit()
+                return rows
+        except:
+            return False
+
+    def getSoapboxEntry(self, id):
+        try:
+            with sqlite3.connect(BotDatabase.DATABASE) as conn:
+                row = conn.execute(
+                    'SELECT * FROM Soapbox WHERE id = {}'.format(id))
+
+                info = list(map(lambda x: x[0], row.description))
+                row = row.fetchone()
+
+                return info, row
+        except:
+            return False
+
+    def deleteSoapboxEntry(self, id):
+        try:
+            with sqlite3.connect(BotDatabase.DATABASE) as conn:
+                conn.execute('DELETE FROM Soapbox WHERE id = {}'.format(id))
+
+                return True
+        except:
+            return False
+
+    def updateSoapboxTopic(self, id, name, date, topic):
+        try:
+            with sqlite3.connect(BotDatabase.DATABASE) as conn:
+                conn.execute('UPDATE Soapbox SET Presenter = \'{}\', date = {}, topic = \'{}\' WHERE id = {}'.format(
+                    name, date, topic, id))
+
+                return True
+        except:
+            return False
