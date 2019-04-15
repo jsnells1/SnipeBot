@@ -2,39 +2,14 @@ from discord import Embed
 from discord.ext.commands import Cog, Context, command, has_permissions
 from datetime import datetime
 
-from data.bot_database import BotDatabase
+from data.code.bot_database import BotDatabase
 
 
 class Soapbox(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name='new_soapbox')
-    async def newSoapbox(self, ctx: Context, *args):
-
-        if len(args) != 3:
-            errMsg = '```Error: Incompatible arguments\nThis command requires 3 arguments. The format is:\n\t"Name" "Date (Month/Day)" "Topic" \nExample:\n\t"Justin S." "4/11" "Video Games"```'
-            await ctx.send(errMsg)
-            return
-
-        name = args[0]
-        topic = args[2]
-
-        try:
-            date = datetime.strptime(
-                args[1], '%m/%d').replace(year=datetime.now().year).timestamp()
-        except ValueError:
-            await ctx.send('```Cannot create soapbox: Date should be in the format of Month/Day\nExample:\n\t4/11```')
-            return
-
-        response = BotDatabase().createSoapbox(name, date, topic)
-
-        if response:
-            await ctx.send('Soapbox created!')
-        else:
-            await ctx.send('Error creating soapbox.')
-
-    @command(name='soapbox_schedule')
+    @command(name='soapbox_schedule', brief="Returns the current soapbox schedule")
     async def getSchedule(self, ctx: Context):
         response = BotDatabase().getSoapboxSchedule()
 
@@ -61,7 +36,35 @@ class Soapbox(Cog):
 
         await ctx.send('', embed=embed)
 
-    @command(name='delete_soapbox_entry')
+    @command(name='new_soapbox', usage='"Name" "Date" "Topic"', brief='(Admin-Only) Creates a new soapbox entry in the schedule',
+             help='To create a new entry type:\n!new_soapbox "Name" "Date (Ex. 4/11)" "Topic"\n Quotes are mandatory and all 3 fields are required')
+    @has_permissions(ban_members=True)
+    async def newSoapbox(self, ctx: Context, *args):
+
+        if len(args) != 3:
+            errMsg = '```Error: Incompatible arguments\nThis command requires 3 arguments. The format is:\n\t"Name" "Date (Month/Day)" "Topic" \nExample:\n\t"Justin S." "4/11" "Video Games"```'
+            await ctx.send(errMsg)
+            return
+
+        name = args[0]
+        topic = args[2]
+
+        try:
+            date = datetime.strptime(
+                args[1], '%m/%d').replace(year=datetime.now().year).timestamp()
+        except ValueError:
+            await ctx.send('```Cannot create soapbox: Date should be in the format of Month/Day\nExample:\n\t4/11```')
+            return
+
+        response = BotDatabase().createSoapbox(name, date, topic)
+
+        if response:
+            await ctx.send('Soapbox created!')
+        else:
+            await ctx.send('Error creating soapbox.')
+
+    @command(name='delete_soapbox_entry', brief='(Admin-Only) Deletes a soapbox entry', usage='id',
+             help="Deletes the entry specified with the id argument")
     @has_permissions(ban_members=True)
     async def deleteEntry(self, ctx: Context, id):
         info, row = BotDatabase().getSoapboxEntry(id)
@@ -101,7 +104,8 @@ class Soapbox(Cog):
         else:
             await ctx.send('Operation aborted.')
 
-    @command(name='update_soapbox_entry')
+    @command(name='update_soapbox_entry', usage='id "Name" "Date" "Topic"', brief='(Admin-Only) Updates a soapbox entry',
+             help='Updates the specified entry given the row id. The entry is updated using the supplied Name, Date, and Topic')
     @has_permissions(ban_members=True)
     async def updateEntry(self, ctx: Context, id=None, *args):
 

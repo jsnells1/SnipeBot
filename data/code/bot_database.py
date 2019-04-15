@@ -66,6 +66,19 @@ class BotDatabase():
         finally:
             conn.close()
 
+    def removeUser(self, userId):
+        try:
+            with sqlite3.connect(BotDatabase.DATABASE) as conn:
+                c = conn.cursor()
+
+                c.execute('DELETE FROM Scores WHERE UserID = {}'.format(userId))
+                conn.commit()
+
+            return True
+
+        except:
+            return False
+
     def addSnipe(self, winner, loser):
         try:
             conn = sqlite3.connect(BotDatabase.DATABASE)
@@ -102,22 +115,6 @@ class BotDatabase():
                 'SELECT * FROM Scores ORDER BY Snipes DESC, Deaths ASC LIMIT 10').fetchall()
 
             return rows
-
-        except:
-            return False
-
-        finally:
-            conn.close()
-
-    def removeUser(self, userId):
-        try:
-            conn = sqlite3.connect(BotDatabase.DATABASE)
-            c = conn.cursor()
-
-            c.execute('DELETE FROM Scores WHERE UserID = {}'.format(userId))
-            conn.commit()
-
-            return True
 
         except:
             return False

@@ -1,7 +1,7 @@
 from discord import User, Member, Embed, Guild
-from discord.ext.commands import Context, Cog, command
+from discord.ext.commands import Context, Cog, command, has_permissions
 
-from data.bot_database import BotDatabase
+from data.code.bot_database import BotDatabase
 
 
 class Snipes(Cog):
@@ -13,7 +13,6 @@ class Snipes(Cog):
     @command(name='Points', brief='Returns the calling user\'s points (or snipes)',
              help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
     async def getPoints(self, ctx: Context):
-        channel = ctx.message.channel
         author = ctx.message.author
 
         points = BotDatabase().getUserPoints(author.id)
@@ -22,26 +21,15 @@ class Snipes(Cog):
             await ctx.send("Error retrieving points...")
 
         if points is None:
+            success = BotDatabase().registerUser(ctx.author.id)
 
-            def check(m):
-                return m.content == 'Y' and m.channel == channel and m.author.id == author.id
-
-            await ctx.send("User has not been registered, would you like to register? (Y/N)")
-
-            try:
-                response = await self.bot.wait_for('message', check=check, timeout=20)
-            except:
-                await ctx.send("Timeout reached. User not registered.")
+            if not success:
+                await ctx.send('User was not found and failed to be registered.')
                 return
-
-            if response:
-                BotDatabase().registerUser(ctx.author.id)
-                await ctx.send("User registered successfully!")
             else:
-                await ctx.send('User not registered.')
+                points = BotDatabase().getUserPoints(author.id)
 
-        else:
-            await ctx.send("{} you have {} point(s)".format(author.mention, points))
+        await ctx.send("{} you have {} point(s)".format(author.mention, points))
 
     # Registers a snipe with snipe bot
 

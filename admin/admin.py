@@ -1,24 +1,39 @@
 from discord import User, Member, Embed, Guild
-from discord.ext.commands import Cog, Context, command, is_owner
+from discord.ext.commands import Cog, Context, command, is_owner, has_permissions
 
-from data.bot_database import BotDatabase
+from data.code.bot_database import BotDatabase, Environment
 
 
 class AdminCommands(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name='RemoveUser', hidden=True)
-    @is_owner()
-    async def removeUser(self, ctx: Context, user: Member):
-        response = BotDatabase().removeUser(user.id)
+    @command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
+    @has_permissions(ban_members=True)
+    async def removeUser(self, ctx: Context, member: Member):
+        await ctx.send('Are you sure you want to remove user: {} (Y/N)'.format(member.nick))
 
-        msg = '```User succesfully deleted.```'
+        author = ctx.message.author
+        channel = ctx.message.channel
 
-        if not response:
-            msg = '```Potential Error - User could not be deleted.```'
+        def check(m):
+            return (m.content == 'Y' or m.content == 'N' or m.content == 'n' or m.content == 'y') and m.channel == channel and m.author.id == author.id
 
-        await ctx.send(msg)
+        try:
+            response = await self.bot.wait_for('message', check=check, timeout=10)
+        except:
+            await ctx.send("```Timeout reached. User lived to fight another day.```")
+            return
+
+        if response.content == 'Y' or response.content == 'y':
+            success = BotDatabase().removeUser(member.id)
+
+            if success:
+                await ctx.send('```User removed.```')
+            else:
+                await ctx.send('```Error: User failed to be removed.```')
+        else:
+            await ctx.send('```User lives to fight another day.```')
 
     @command(name='RegisterUser', hidden=True)
     @is_owner()
@@ -55,3 +70,35 @@ class AdminCommands(Cog):
             msg = '```Potential Error - User could not be updated.```'
 
         await ctx.send(msg)
+
+    @command(name='switchDB', hidden=True)
+    @has_permissions(ban_members=True)
+    async def switchDB(self, ctx: Context, env=None):
+
+        if env is None:
+            await ctx.send('Please pass the environment to switch to (live/dev)')
+            return
+
+        if env == 'live':
+            dbEnv = Environment.live
+        elif env == 'dev':
+            dbEnv = Environment.dev
+        else:
+            await ctx.send('Invalid argument.')
+            return
+
+        response = BotDatabase().switchDatabase(dbEnv)
+
+        if response:
+            await ctx.send('Database successfully changed.')
+        else:
+            await ctx.send('Error changing database.')
+
+    @command(name='db_environment', hidden=True)
+    @has_permissions(ban_members=True)
+    async def getDBEnvironment(self, ctx: Context, env=None):
+        
+        if BotDatabase().DATABASE == BotDatabase().DEV_DATABASE:
+            await ctx.send('```Dev```')
+        else:
+            await ctx.send('```Live```')
