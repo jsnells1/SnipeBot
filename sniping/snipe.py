@@ -1,13 +1,18 @@
+import calendar
+from datetime import datetime
 from discord import User, Member, Embed, Guild
-from discord.ext.commands import Context, Cog, command, has_permissions
+from discord.ext.commands import Context, Cog, command, has_permissions, check
 
 from data import code
 from data.code import Environment
 
 
 class Snipes(Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, day, start, end):
         self.bot = bot
+        self.club_day = day
+        self.club_start = start
+        self.club_end = end
 
     # Returns a user's points or snipes
 
@@ -16,7 +21,7 @@ class Snipes(Cog):
     async def getPoints(self, ctx: Context):
         author = ctx.message.author
         points = code.getUserPoints(author.id)
-        
+
         if not points:
             await ctx.send("Error retrieving points...")
 
@@ -37,20 +42,34 @@ class Snipes(Cog):
              help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipeUser(self, ctx: Context, *losers: Member):
 
+        # await ctx.send('```Sniping currently disabled for development. Register your snipe later```')
+        # return
+
+        today = datetime.now()
+
+        if today.weekday() == self.club_day and today.hour >= self.club_start and today.hour < self.club_end:
+            await ctx.send('```Sniping disabled during club hours: {} from {}:00 to {}:00 (Military Time)```'.format(calendar.day_name[self.club_day], self.club_start, self.club_end))
+            return
+
         if len(losers) == 0:
             await ctx.send('To snipe a user, type !snipe <@Target>. You can snipe multiple users by typing !snipe <@Target1> <@Target2> etc..')
             return
 
+        if any(x.id == ctx.author.id for x in losers):
+            await ctx.send('Sorry, you cannot snipe yourself...')
+            return
+
         hits = []
+        respawns = []
         errors = []
 
         for loser in losers:
-
-            if code.addSnipe(ctx.author.id, loser.id):
+            if code.isRespawning(loser.id):
+                respawns.append(loser.nick)
+            elif code.addSnipe(ctx.author.id, loser.id):
                 hits.append(loser.nick)
             else:
                 errors.append(loser.nick)
-                await ctx.send('Snipe failed to register.. Error')
 
         returnStr = ''
 
@@ -60,6 +79,13 @@ class Snipes(Cog):
         elif len(hits) > 1:
             returnStr = 'SNIPED! {} has sniped {}! '.format(
                 ctx.author.nick, ', '.join(hits[:-1]) + ' and ' + hits[-1])
+
+        if len(respawns) == 1:
+            returnStr += '{} was not hit because they\'re still respawning. '.format(
+                respawns[0])
+        elif len(respawns) > 1:
+            returnStr += '{} were not hit because they\'re still respawning. '.format(
+                ', '.join(respawns[:-1]) + ' and ' + respawns[-1])
 
         if len(errors) == 1:
             returnStr += 'Error registering hit on {}.'.format(errors[0])

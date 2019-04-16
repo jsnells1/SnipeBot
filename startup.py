@@ -1,4 +1,7 @@
 import argparse
+import configparser
+import sys
+from datetime import datetime, timedelta
 
 import discord
 from discord.ext.commands import Bot, Context, has_permissions, MissingPermissions
@@ -10,7 +13,27 @@ from soapbox.soapbox import Soapbox
 from data import code
 from data.code import Environment
 
-TOKEN = 'NTY2MDU0MTYzNDk5NDUwMzk5.XK_aKg.-dGUgE3J1JgnJaVrnEJS8gFQDKw'
+# Read and Verify config
+
+config = configparser.ConfigParser()
+config.sections()
+
+config.read('config.ini')
+
+if 'TOKEN' not in config or 'Token' not in config['TOKEN']:
+    sys.exit('Token not found in config file')
+
+if 'SnipingExceptions' not in config:
+    sys.exit('SnipingExceptions section not found in config file')
+
+try:
+    day = int(config['SnipingExceptions']['ClubDay'])
+    start = int(config['SnipingExceptions']['ClubTimeStart'])
+    end = int(config['SnipingExceptions']['ClubTimeStop'])
+except:
+    sys.exit('Cannot resolve club day, start, and stop in config')
+
+TOKEN = str(config['TOKEN']['Token'])
 BOT_PREFIX = "!"
 
 bot = Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
@@ -35,6 +58,7 @@ async def kill_error(error, ctx: Context):
 async def on_ready():
     print('Ready. Database: ' + code.DATABASE)
 
+
 # Setup
 parser = argparse.ArgumentParser()
 parser.add_argument('-env')
@@ -46,8 +70,7 @@ if args.env is not None:
     elif args.env == 'live':
         code.switchDatabase(Environment.live)
 
-
 bot.add_cog(Soapbox(bot))
-bot.add_cog(Snipes(bot))
+bot.add_cog(Snipes(bot, day, start, end))
 bot.add_cog(AdminCommands(bot))
 bot.run(TOKEN)

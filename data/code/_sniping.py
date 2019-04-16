@@ -1,6 +1,8 @@
 import sqlite3
+from datetime import datetime, timedelta
 
 from data import code
+
 
 def getUserPoints(userId):
     try:
@@ -55,31 +57,68 @@ def removeUser(userId):
         return False
 
 
+def isRespawning(userID):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            c = conn.cursor()
+
+            row = c.execute(
+                'SELECT Respawn FROM Scores WHERE UserID = {}'.format(userID)).fetchone()
+
+            if row is not None:
+                if row[0] is not None:
+                    respawn = datetime.fromtimestamp(row[0])
+
+                    return datetime.now() < respawn
+
+            return False
+    except Exception as e:
+        print(e)
+        return False
+
+
+def setRespawn(userID, conn):
+    try:
+
+        respawnTime = 2
+
+        date = datetime.now() + timedelta(hours=respawnTime)
+        conn.execute('UPDATE Scores SET Respawn = {} WHERE UserID = {}'.format(
+            date.timestamp(), userID))
+
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
 def addSnipe(winner, loser):
     try:
-        conn = sqlite3.connect(code.DATABASE)
-        c = conn.cursor()
+        with sqlite3.connect(code.DATABASE) as conn:
+            c = conn.cursor()
 
-        c.execute(
-            'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(winner))
+            c.execute(
+                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(winner))
 
-        c.execute(
-            'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
+            c.execute(
+                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
 
-        c.execute(
-            'UPDATE Scores SET Snipes = Snipes + 1 WHERE UserID = {}'.format(winner))
-        c.execute(
-            'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
+            c.execute(
+                'UPDATE Scores SET Snipes = Snipes + 1 WHERE UserID = {}'.format(winner))
+            c.execute(
+                'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
 
-        conn.commit()
+            c.execute('UPDATE Scores SET Respawn = NULL WHERE UserID = {}'.format(winner))
+
+            if not setRespawn(loser, conn):
+                return False
+
+            conn.commit()
 
         return True
 
     except:
         return False
-
-    finally:
-        conn.close()
 
 
 def getLeaderboard():
