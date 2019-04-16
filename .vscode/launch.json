@@ -5,18 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File (Integrated Terminal)",
+            "name": "Python: Current File (Integrated Terminal) - DEV DB",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/startup.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": [
+                "-env",
+                "dev"
+            ]
         },
         {
-            "name": "Python: Current File (External Terminal)",
+            "name": "Python: Current File (Integrated Terminal) - LIVE DB",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/startup.py",
-            "console": "externalTerminal"
+            "console": "integratedTerminal",
+            "args": [
+                "-env",
+                "live"
+            ]
         }
     ]
 }
