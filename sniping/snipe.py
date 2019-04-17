@@ -1,24 +1,47 @@
 import calendar
+import asyncio
 from datetime import datetime
-from discord import User, Member, Embed, Guild
-from discord.ext.commands import Context, Cog, command, has_permissions, check
+
+import discord
+import discord.ext.commands as commands
 
 from data import code
 from data.code import Environment
 
 
-class Snipes(Cog):
+class Snipes(commands.Cog):
     def __init__(self, bot, day, start, end):
         self.bot = bot
         self.club_day = day
         self.club_start = start
         self.club_end = end
+        self.general_channel = 427276681510649868
+        self.test_channel = 566076016825597972
+        self.indies_guild = 427276681510649866
+        self.bg_task = self.bot.loop.create_task(self.check_for_respawns())
+
+    async def check_for_respawns(self):
+        await self.bot.wait_until_ready()
+
+        channel = self.bot.get_channel(self.general_channel)
+        guild = self.bot.get_guild(self.indies_guild)
+
+        while not self.bot.is_closed():
+            respawns = code.getAllRespawns()
+
+            if len(respawns) > 0:
+                users = []
+                for user in respawns:
+                    users.append(guild.get_member(int(user)).nick)
+
+                await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
+            await asyncio.sleep(60)
 
     # Returns a user's points or snipes
 
-    @command(name='Points', brief='Returns the calling user\'s points (or snipes)',
-             help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
-    async def getPoints(self, ctx: Context):
+    @commands.command(name='Points', brief='Returns the calling user\'s points (or snipes)',
+                      help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
+    async def getPoints(self, ctx: commands.Context):
         author = ctx.message.author
         points = code.getUserPoints(author.id)
 
@@ -38,12 +61,9 @@ class Snipes(Cog):
 
     # Registers a snipe with snipe bot
 
-    @command(name='Snipe', brief='Registers a snipe from the calling user to the mentioned user', usage='<@TargetUser>',
-             help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
-    async def snipeUser(self, ctx: Context, *losers: Member):
-
-        # await ctx.send('```Sniping currently disabled for development. Register your snipe later```')
-        # return
+    @commands.command(name='Snipe', brief='Registers a snipe from the calling user to the mentioned user', usage='<@TargetUser>',
+                      help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
+    async def snipeUser(self, ctx: commands.Context, *losers: discord.Member):
 
         today = datetime.now()
 
@@ -95,10 +115,19 @@ class Snipes(Cog):
 
         await ctx.send(returnStr)
 
+    @snipeUser.error
+    async def sniperUser_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('```Command failed (Bad Arguments): Please resubmit your snipe\n\
+Ensure you write the command as !snipe @Target1 @Target2 etc..\n\
+Be sure not to write any other text like:\n\
+\t!snipe @Justin Got you Justin!\n\
+This will fail.```')
+
     # Returns the current leaderboard
 
-    @command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
-    async def leaderboard(self, ctx: Context):
+    @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
+    async def leaderboard(self, ctx: commands.Context):
         rows = code.getLeaderboard()
         if not rows:
             await ctx.send('```Error retrieving leaderboard```')
@@ -117,9 +146,9 @@ class Snipes(Cog):
         for i, row in enumerate(rows):
             user = ctx.guild.get_member(int(row[0]))
 
-            nameColLength = max(nameColLength, len(
-                str(i + 1) + '. ' + user.nick[0:10]))
-
+            name = '{:<4}'.format(str(i + 1) + '. ') + user.nick[0:10]
+            
+            nameColLength = max(nameColLength, len(name))
             snipeColLength = max(snipeColLength, len(str(row[1])))
             deathColLength = max(deathColLength, len(str(row[2])))
 
@@ -127,7 +156,7 @@ class Snipes(Cog):
             ((nameColLength - len(_userColName)) * ' ')
         output += _snipesColName + _paddingString + \
             ((snipeColLength - len(_snipesColName)) * ' ')
-        output += _deathsColName + _paddingString + \
+        output += _deathsColName + \
             ((deathColLength - len(_deathsColName)) * ' ') + '\n'
         output += '-' * (_padding * 2 + nameColLength +
                          snipeColLength + deathColLength) + '\n'
@@ -135,13 +164,13 @@ class Snipes(Cog):
         for i, row in enumerate(rows):
             user = ctx.guild.get_member(int(row[0]))
 
-            name = str(i + 1) + '. ' + user.nick[0:10]
+            name = '{:<4}'.format(str(i + 1) + '. ') + user.nick[0:10]
 
             output += name + _paddingString + \
                 ((nameColLength - len(name)) * ' ')
             output += str(row[1]) + _paddingString + \
                 ((snipeColLength - len(str(row[1]))) * ' ')
-            output += str(row[2]) + _paddingString + \
+            output += str(row[2]) + \
                 ((deathColLength - len(str(row[2]))) * ' ') + '\n'
 
         await ctx.send('```' + output + '```')

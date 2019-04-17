@@ -1,17 +1,17 @@
-from discord import Embed
-from discord.ext.commands import Cog, Context, command, has_permissions
+import discord
+import discord.ext.commands as commands
 from datetime import datetime
 
 from data import code
 from data.code import Environment
 
 
-class Soapbox(Cog):
+class Soapbox(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name='soapbox_schedule', brief="Returns the current soapbox schedule")
-    async def getSchedule(self, ctx: Context):
+    @commands.command(name='soapbox_schedule', brief="Returns the current soapbox schedule")
+    async def getSchedule(self, ctx: commands.Context):
         response = code.getSoapboxSchedule()
 
         if not response:
@@ -27,7 +27,7 @@ class Soapbox(Cog):
             dates += (date or '-') + '\n'
             topics += (row[3] or '-') + '\n'
 
-        embed = Embed(
+        embed = discord.Embed(
             description='Below is the current Soapbox Schedule for club. Admins, use the Row IDs for managing the schedule.', color=0x00ff00)
         embed.set_author(name='Soapbox Schedule',
                          icon_url='https://cdn.discordapp.com/icons/427276681510649866/d58764b8910cbbaeb78f2a327f014a54.png')
@@ -37,10 +37,10 @@ class Soapbox(Cog):
 
         await ctx.send('', embed=embed)
 
-    @command(name='new_soapbox', usage='"Name" "Date" "Topic"', brief='(Admin-Only) Creates a new soapbox entry in the schedule',
+    @commands.command(name='new_soapbox', usage='"Name" "Date" "Topic"', brief='(Admin-Only) Creates a new soapbox entry in the schedule',
              help='To create a new entry type:\n!new_soapbox "Name" "Date (Ex. 4/11)" "Topic"\n Quotes are mandatory and all 3 fields are required')
-    @has_permissions(ban_members=True)
-    async def newSoapbox(self, ctx: Context, *args):
+    @commands.has_permissions(ban_members=True)
+    async def newSoapbox(self, ctx: commands.Context, *args):
 
         if len(args) != 3:
             errMsg = '```Error: Incompatible arguments\nThis command requires 3 arguments. The format is:\n\t"Name" "Date (Month/Day)" "Topic" \nExample:\n\t"Justin S." "4/11" "Video Games"```'
@@ -64,10 +64,10 @@ class Soapbox(Cog):
         else:
             await ctx.send('Error creating soapbox.')
 
-    @command(name='delete_soapbox_entry', brief='(Admin-Only) Deletes a soapbox entry', usage='id',
+    @commands.command(name='delete_soapbox_entry', brief='(Admin-Only) Deletes a soapbox entry', usage='id',
              help="Deletes the entry specified with the id argument")
-    @has_permissions(ban_members=True)
-    async def deleteEntry(self, ctx: Context, id):
+    @commands.has_permissions(ban_members=True)
+    async def deleteEntry(self, ctx: commands.Context, id):
         info, row = code.getSoapboxEntry(id)
 
         if row is None or not row:
@@ -105,10 +105,10 @@ class Soapbox(Cog):
         else:
             await ctx.send('Operation aborted.')
 
-    @command(name='update_soapbox_entry', usage='id "Name" "Date" "Topic"', brief='(Admin-Only) Updates a soapbox entry',
+    @commands.command(name='update_soapbox_entry', usage='id "Name" "Date" "Topic"', brief='(Admin-Only) Updates a soapbox entry',
              help='Updates the specified entry given the row id. The entry is updated using the supplied Name, Date, and Topic')
-    @has_permissions(ban_members=True)
-    async def updateEntry(self, ctx: Context, id=None, *args):
+    @commands.has_permissions(ban_members=True)
+    async def updateEntry(self, ctx: commands.Context, id=None, *args):
 
         try:
             id = int(id)
