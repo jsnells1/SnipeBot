@@ -17,13 +17,14 @@ class Snipes(commands.Cog):
         self.club_end = end
         self.general_channel = 427276681510649868
         self.test_channel = 566076016825597972
+        self.snipe_channel = 568115558206406656
         self.indies_guild = 427276681510649866
         self.bg_task = self.bot.loop.create_task(self.check_for_respawns())
 
     async def check_for_respawns(self):
         await self.bot.wait_until_ready()
 
-        channel = self.bot.get_channel(self.general_channel)
+        channel = self.bot.get_channel(self.snipe_channel)
         guild = self.bot.get_guild(self.indies_guild)
 
         while not self.bot.is_closed():
@@ -84,6 +85,8 @@ class Snipes(commands.Cog):
         errors = []
 
         for loser in losers:
+            if loser.bot:
+                continue
             if code.isRespawning(loser.id):
                 respawns.append(loser.nick)
             elif code.addSnipe(ctx.author.id, loser.id):
@@ -145,9 +148,9 @@ This will fail.```')
 
         for i, row in enumerate(rows):
             user = ctx.guild.get_member(int(row[0]))
-
-            name = '{:<4}'.format(str(i + 1) + '. ') + user.nick[0:10]
             
+            name = '{:<4}'.format(str(i + 1) + '. ') + user.nick[0:10]
+
             nameColLength = max(nameColLength, len(name))
             snipeColLength = max(snipeColLength, len(str(row[1])))
             deathColLength = max(deathColLength, len(str(row[2])))
@@ -174,5 +177,3 @@ This will fail.```')
                 ((deathColLength - len(str(row[2]))) * ' ') + '\n'
 
         await ctx.send('```' + output + '```')
-        
-  

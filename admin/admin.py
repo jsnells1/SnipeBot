@@ -142,3 +142,18 @@ class AdminCommands(commands.Cog):
     # Return % of CPU used by user as a character string
     def getCPUuse(self):
         return(str(os.popen("top -n1 | awk '/Cpu\(s\):/ {print $2}'").readline().strip()))
+
+    @commands.command(name='backup_db')
+    @commands.has_role(item='Dev Team')
+    async def backup_db(self, ctx: commands.Context):
+        dev_db = discord.File(fp='./data/dev_database.db')
+        live_db = discord.File(fp='./data/database.db')
+
+        dm_channel = ctx.author.dm_channel
+
+        if dm_channel is None:
+            await ctx.author.create_dm()
+
+        dm_channel = ctx.author.dm_channel
+
+        await dm_channel.send('', files=[dev_db, live_db])

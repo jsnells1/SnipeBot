@@ -37,11 +37,11 @@ TOKEN = str(config['TOKEN']['Token'])
 BOT_PREFIX = "!"
 
 bot = commands.Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
-          activity=discord.Activity(type=discord.ActivityType.listening, name='Logan\'s SI Session'))
+                   activity=discord.Activity(type=discord.ActivityType.listening, name='Logan\'s SI Session'))
 
 
 @bot.command(name='q2', hidden=True)
-@commands.has_permissions(ban_members=True)
+@commands.has_role(item='Dev Team')
 async def kill(ctx: commands.Context):
     await bot.logout()
 
