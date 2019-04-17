@@ -1,17 +1,17 @@
-from discord import User, Member, Embed, Guild
-from discord.ext.commands import Cog, Context, command, is_owner, has_permissions
+import discord
+import discord.ext.commands as commands
 
 from data import code
 from data.code import Environment
 
 
-class AdminCommands(Cog):
+class AdminCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
-    @has_permissions(ban_members=True)
-    async def removeUser(self, ctx: Context, member: Member):
+    @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
+    @commands.has_permissions(ban_members=True)
+    async def removeUser(self, ctx: commands.Context, member: discord.Member):
         await ctx.send('Are you sure you want to remove user: {} (Y/N)'.format(member.nick))
 
         author = ctx.message.author
@@ -36,9 +36,9 @@ class AdminCommands(Cog):
         else:
             await ctx.send('```User lives to fight another day.```')
 
-    @command(name='RegisterUser', hidden=True)
-    @is_owner()
-    async def registerUser(self, ctx: Context, user: Member):
+    @commands.command(name='RegisterUser', hidden=True)
+    @commands.is_owner()
+    async def registerUser(self, ctx: commands.Context, user: discord.Member):
         response = code.registerUser(user.id)
 
         msg = '```User succesfully added.```'
@@ -48,9 +48,9 @@ class AdminCommands(Cog):
 
         await ctx.send(msg)
 
-    @command(name='SetSnipes', hidden=True)
-    @is_owner()
-    async def setSnipes(self, ctx: Context, user: Member, amount: int):
+    @commands.command(name='SetSnipes', hidden=True)
+    @commands.is_owner()
+    async def setSnipes(self, ctx: commands.Context, user: discord.Member, amount: int):
         response = code.setSnipes(user.id, amount)
 
         msg = '```User snipes updated.```'
@@ -60,9 +60,9 @@ class AdminCommands(Cog):
 
         await ctx.send(msg)
 
-    @command(name='SetDeaths', hidden=True)
-    @is_owner()
-    async def setDeaths(self, ctx: Context, user: Member, amount: int):
+    @commands.command(name='SetDeaths', hidden=True)
+    @commands.is_owner()
+    async def setDeaths(self, ctx: commands.Context, user: discord.Member, amount: int):
         response = code.setDeaths(user.id, amount)
 
         msg = '```User deaths updated.```'
@@ -72,9 +72,9 @@ class AdminCommands(Cog):
 
         await ctx.send(msg)
 
-    @command(name='switchDB', hidden=True)
-    @has_permissions(ban_members=True)
-    async def switchDB(self, ctx: Context, env=None):
+    @commands.command(name='switchDB', hidden=True)
+    @commands.has_permissions(ban_members=True)
+    async def switchDB(self, ctx: commands.Context, env=None):
 
         if env is None:
             await ctx.send('Please pass the environment to switch to (live/dev)')
@@ -95,9 +95,9 @@ class AdminCommands(Cog):
         else:
             await ctx.send('Error changing database.')
 
-    @command(name='db_environment', hidden=True)
-    @has_permissions(ban_members=True)
-    async def getDBEnvironment(self, ctx: Context, env=None):
+    @commands.command(name='db_environment', hidden=True)
+    @commands.has_permissions(ban_members=True)
+    async def getDBEnvironment(self, ctx: commands.Context, env=None):
 
         if code.DATABASE == code.DEV_DATABASE:
             await ctx.send('```Dev```')

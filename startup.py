@@ -4,7 +4,7 @@ import sys
 from datetime import datetime, timedelta
 
 import discord
-from discord.ext.commands import Bot, Context, has_permissions, MissingPermissions
+import discord.ext.commands as commands
 
 from sniping.snipe import Snipes
 from admin.admin import AdminCommands
@@ -36,21 +36,21 @@ except:
 TOKEN = str(config['TOKEN']['Token'])
 BOT_PREFIX = "!"
 
-bot = Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
-          activity=discord.Activity(type=discord.ActivityType.watching, name='Nathan\'s snap story'))
+bot = commands.Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
+          activity=discord.Activity(type=discord.ActivityType.listening, name='Logan\'s SI Session'))
 
 
 @bot.command(name='q2', hidden=True)
-@has_permissions(ban_members=True)
-async def kill(ctx: Context):
+@commands.has_permissions(ban_members=True)
+async def kill(ctx: commands.Context):
     await bot.logout()
 
 
 @kill.error
-async def kill_error(error, ctx: Context):
-    if isinstance(error, MissingPermissions):
+async def kill_error(ctx: commands.Context, error):
+    if isinstance(error, commands.MissingPermissions):
         text = "Sorry {}, you do not have permissions to do that!".format(
-            ctx.message.author)
+            ctx.message.author.mention)
         await ctx.send(text)
 
 

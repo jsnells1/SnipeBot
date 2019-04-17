@@ -92,6 +92,26 @@ def setRespawn(userID, conn):
         return False
 
 
+def getAllRespawns():
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            date = datetime.now().timestamp()
+            rows = conn.execute(
+                'SELECT UserID FROM Scores WHERE Respawn < {}'.format(date)).fetchall()
+
+            rows = [x[0] for x in rows]
+
+            conn.execute(
+                'UPDATE Scores SET Respawn = ? WHERE Respawn < {}'.format(date), (None,))
+
+            conn.commit()
+
+        return rows
+    except:
+        return False
+
+
 def addSnipe(winner, loser):
     try:
         with sqlite3.connect(code.DATABASE) as conn:
@@ -108,7 +128,8 @@ def addSnipe(winner, loser):
             c.execute(
                 'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
 
-            c.execute('UPDATE Scores SET Respawn = NULL WHERE UserID = {}'.format(winner))
+            c.execute(
+                'UPDATE Scores SET Respawn = NULL WHERE UserID = {}'.format(winner))
 
             if not setRespawn(loser, conn):
                 return False
