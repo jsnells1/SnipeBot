@@ -175,37 +175,4 @@ This will fail.```')
 
         await ctx.send('```' + output + '```')
         
-    @command(name='HealthCheck', brief='Returns a health check for the bot and the Pi',
-             help='It\'s the simplest one in the book')
-    async def getHealth(self, ctx: Context):
-        
-        healthStr = 'Tell the Indies that the Pi said hello.\n\n'
-        heat = getCPUtemperature()
-        healthStr += 'Temp: {}C | {}F\n'.format(heat, 9.0 / 5.0 * float(heat) + 32))
-        healthStr += 'Free RAM: {}KB\n'.format(int(float(getRAMinfo()[1]) / 1024)))
-        healthStr += 'Current CPU Usage: {}%\n'.format(getCPUuse()))
-        
-        await ctx.send(healthStr)
-        
-    # Return CPU temperature as a character string                                      
-    def getCPUtemperature():
-        res = os.popen('vcgencmd measure_temp').readline()
-        return(res.replace("temp=","").replace("'C\n",""))
-
-    # Return RAM information (unit=kb) in a list                                        
-    # Index 0: total RAM                                                                
-    # Index 1: used RAM                                                                 
-    # Index 2: free RAM                                                                 
-    def getRAMinfo():
-        p = os.popen('free')
-        i = 0
-        while 1:
-            i = i + 1
-            line = p.readline()
-            if i==2:
-                return(line.split()[1:4])
-
-    # Return % of CPU used by user as a character string                                
-    def getCPUuse():
-        return(str(os.popen("top -n1 | awk '/Cpu\(s\):/ {print $2}'").readline().strip(\
-    )))
+  
