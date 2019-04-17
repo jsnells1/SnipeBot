@@ -105,3 +105,4 @@ venv.bak/
 
 # Config (contains token)
 config.ini
+config.cfg

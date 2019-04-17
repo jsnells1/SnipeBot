@@ -18,7 +18,7 @@ from data.code import Environment
 config = configparser.ConfigParser()
 config.sections()
 
-config.read('config.ini')
+config.read('config.cfg')
 
 if 'TOKEN' not in config or 'Token' not in config['TOKEN']:
     sys.exit('Token not found in config file')
