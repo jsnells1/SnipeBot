@@ -17,28 +17,54 @@ class Soapbox(commands.Cog):
         if not response:
             await ctx.send('Error retrieving Soapbox Schedule.')
 
-        names = ''
-        dates = ''
-        topics = ''
+        _padding = 2
+        _paddingString = ' ' * _padding
+        _idColName = 'ID'
+        _nameColName = 'Name'
+        _dateColName = 'Date'
+        _topicColName = 'Topic'
+
+        idColLength = len(_idColName)
+        nameColLength = len(_nameColName)
+        dateColLength = len(_dateColName)
+        topicColLength = len(_topicColName)
 
         for row in response:
+            idColLength = max(idColLength, len(str(row[0])))
+            nameColLength = max(nameColLength, len(row[1]))
+
             date = datetime.fromtimestamp(row[2]).strftime('%b. %d')
-            names += str(row[0]) + ' - ' + row[1] + '\n'
-            dates += (date or '-') + '\n'
-            topics += (row[3] or '-') + '\n'
 
-        embed = discord.Embed(
-            description='Below is the current Soapbox Schedule for club. Admins, use the Row IDs for managing the schedule.', color=0x00ff00)
-        embed.set_author(name='Soapbox Schedule',
-                         icon_url='https://cdn.discordapp.com/icons/427276681510649866/d58764b8910cbbaeb78f2a327f014a54.png')
-        embed.add_field(name='Row ID - Name', value=names, inline=True)
-        embed.add_field(name='Date', value=dates, inline=True)
-        embed.add_field(name='Topic', value=topics)
+            dateColLength = max(dateColLength, len(date))
+            topicColLength = max(topicColLength, len(row[3]))
 
-        await ctx.send('', embed=embed)
+        returnStr = _idColName + \
+            (idColLength - len(_idColName)) * ' ' + _paddingString
+        returnStr += _nameColName + \
+            (nameColLength - len(_nameColName)) * ' ' + _paddingString
+        returnStr += _dateColName + \
+            (dateColLength - len(_dateColName)) * ' ' + _paddingString
+        returnStr += _topicColName + '\n'
+        returnStr += '-' * (idColLength + nameColLength +
+                            dateColLength + topicColLength + (3*_padding)) + '\n'
+
+        for row in response:
+            returnStr += str(row[0]) + _paddingString + \
+                (idColLength - len(str(row[0]))) * ' '
+            returnStr += row[1] + _paddingString + \
+                (nameColLength - len(str(row[1]))) * ' '
+
+            date = datetime.fromtimestamp(row[2]).strftime('%b. %d')
+
+            returnStr += (date or '-') + _paddingString + \
+                (dateColLength - len(date)) * ' '
+            returnStr += (row[3] or '-') + _paddingString + \
+                (topicColLength - len(str(row[3]))) * ' ' + '\n'
+
+        await ctx.send('```' + returnStr + '```')
 
     @commands.command(name='new_soapbox', usage='"Name" "Date" "Topic"', brief='(Admin-Only) Creates a new soapbox entry in the schedule',
-             help='To create a new entry type:\n!new_soapbox "Name" "Date (Ex. 4/11)" "Topic"\n Quotes are mandatory and all 3 fields are required')
+                      help='To create a new entry type:\n!new_soapbox "Name" "Date (Ex. 4/11)" "Topic"\n Quotes are mandatory and all 3 fields are required')
     @commands.has_permissions(ban_members=True)
     async def newSoapbox(self, ctx: commands.Context, *args):
 
@@ -65,7 +91,7 @@ class Soapbox(commands.Cog):
             await ctx.send('Error creating soapbox.')
 
     @commands.command(name='delete_soapbox_entry', brief='(Admin-Only) Deletes a soapbox entry', usage='id',
-             help="Deletes the entry specified with the id argument")
+                      help="Deletes the entry specified with the id argument")
     @commands.has_permissions(ban_members=True)
     async def deleteEntry(self, ctx: commands.Context, id):
         info, row = code.getSoapboxEntry(id)
@@ -106,7 +132,7 @@ class Soapbox(commands.Cog):
             await ctx.send('Operation aborted.')
 
     @commands.command(name='update_soapbox_entry', usage='id "Name" "Date" "Topic"', brief='(Admin-Only) Updates a soapbox entry',
-             help='Updates the specified entry given the row id. The entry is updated using the supplied Name, Date, and Topic')
+                      help='Updates the specified entry given the row id. The entry is updated using the supplied Name, Date, and Topic')
     @commands.has_permissions(ban_members=True)
     async def updateEntry(self, ctx: commands.Context, id=None, *args):
 
