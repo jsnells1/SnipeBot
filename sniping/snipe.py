@@ -24,7 +24,7 @@ class Snipes(commands.Cog):
     async def check_for_respawns(self):
         await self.bot.wait_until_ready()
 
-        channel = self.bot.get_channel(self.snipe_channel)
+        channel = self.bot.get_channel(self.test_channel)
         guild = self.bot.get_guild(self.indies_guild)
 
         while not self.bot.is_closed():
@@ -139,41 +139,48 @@ This will fail.```')
         _padding = 3
         _paddingString = ' ' * _padding
         _userColName = 'Name'
+        _pointsColName = 'P'
         _snipesColName = 'S'
         _deathsColName = 'D'
 
         nameColLength = len(_userColName)
+        pointsColLength = len(_pointsColName)
         snipeColLength = len(_snipesColName)
         deathColLength = len(_deathsColName)
 
         for i, row in enumerate(rows):
             user = ctx.guild.get_member(int(row[0]))
-            
-            name = '{:<4}'.format(str(i + 1) + '. ') + user.nick[0:10]
+
+            name = '{:<4}'.format(str(i + 1) + '.') + user.nick[0:10]
 
             nameColLength = max(nameColLength, len(name))
-            snipeColLength = max(snipeColLength, len(str(row[1])))
-            deathColLength = max(deathColLength, len(str(row[2])))
+            pointsColLength = max(pointsColLength, len(str(row[1])))
+            snipeColLength = max(snipeColLength, len(str(row[2])))
+            deathColLength = max(deathColLength, len(str(row[3])))
 
         output = _userColName + _paddingString + \
             ((nameColLength - len(_userColName)) * ' ')
+        output += _pointsColName + _paddingString + \
+            ((pointsColLength - len(_pointsColName)) * ' ')
         output += _snipesColName + _paddingString + \
             ((snipeColLength - len(_snipesColName)) * ' ')
         output += _deathsColName + \
             ((deathColLength - len(_deathsColName)) * ' ') + '\n'
-        output += '-' * (_padding * 2 + nameColLength +
+        output += '-' * (_padding * 3 + nameColLength + pointsColLength +
                          snipeColLength + deathColLength) + '\n'
 
         for i, row in enumerate(rows):
             user = ctx.guild.get_member(int(row[0]))
 
-            name = '{:<4}'.format(str(i + 1) + '. ') + user.nick[0:10]
+            name = '{:<4}'.format(str(i + 1) + '.') + user.nick[0:10]
 
             output += name + _paddingString + \
                 ((nameColLength - len(name)) * ' ')
             output += str(row[1]) + _paddingString + \
-                ((snipeColLength - len(str(row[1]))) * ' ')
-            output += str(row[2]) + \
-                ((deathColLength - len(str(row[2]))) * ' ') + '\n'
+                ((pointsColLength - len(str(row[1]))) * ' ')
+            output += str(row[2]) + _paddingString + \
+                ((snipeColLength - len(str(row[2]))) * ' ')
+            output += str(row[3]) + \
+                ((deathColLength - len(str(row[3]))) * ' ') + '\n'
 
         await ctx.send('```' + output + '```')

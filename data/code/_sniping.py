@@ -10,7 +10,7 @@ def getUserPoints(userId):
         c = conn.cursor()
 
         c.execute(
-            'SELECT Snipes FROM Scores WHERE UserID = {}'.format(userId))
+            'SELECT Points FROM Scores WHERE UserID = {}'.format(userId))
 
         row = c.fetchone()
 
@@ -124,7 +124,7 @@ def addSnipe(winner, loser):
                 'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
 
             c.execute(
-                'UPDATE Scores SET Snipes = Snipes + 1 WHERE UserID = {}'.format(winner))
+                'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1 WHERE UserID = {}'.format(winner))
             c.execute(
                 'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
 
@@ -148,7 +148,7 @@ def getLeaderboard():
         with sqlite3.connect(code.DATABASE) as conn:
 
             rows = conn.execute(
-                'SELECT * FROM Scores ORDER BY Snipes DESC, Deaths ASC LIMIT 10').fetchall()
+                'SELECT * FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10').fetchall()
 
             return rows
 
