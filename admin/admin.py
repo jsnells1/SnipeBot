@@ -63,6 +63,18 @@ class AdminCommands(commands.Cog):
 
         await ctx.send(msg)
 
+    @commands.command(name='SetPoints', hidden=True)
+    @commands.is_owner()
+    async def setPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
+        response = code.setPoints(user.id, amount)
+
+        msg = '```User points updated.```'
+
+        if not response:
+            msg = '```Potential Error - User could not be updated.```'
+
+        await ctx.send(msg)
+
     @commands.command(name='SetDeaths', hidden=True)
     @commands.is_owner()
     async def setDeaths(self, ctx: commands.Context, user: discord.Member, amount: int):

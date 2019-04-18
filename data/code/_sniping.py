@@ -175,6 +175,24 @@ def setSnipes(userId, amt):
         conn.close()
 
 
+def setPoints(userId, amt):
+    try:
+        conn = sqlite3.connect(code.DATABASE)
+        c = conn.cursor()
+
+        c.execute(
+            'UPDATE Scores SET Points = {} WHERE UserID = {}'.format(amt, userId))
+        conn.commit()
+
+        return True
+
+    except:
+        return False
+
+    finally:
+        conn.close()
+
+
 def setDeaths(userId, amt):
     try:
         conn = sqlite3.connect(code.DATABASE)
