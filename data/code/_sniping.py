@@ -79,6 +79,33 @@ def isRespawning(userID):
         return False
 
 
+def getRevengeUser(userID):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            c = conn.cursor()
+
+            row = c.execute(
+                'SELECT Revenge FROM Scores WHERE UserID = {}'.format(userID)).fetchone()
+
+            return row[0]
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def resetRevenge(userID):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            conn.execute(
+                'UPDATE Scores SET Revenge = ? WHERE UserId = ?', (None, userID,))
+
+    except Exception as e:
+        print(e)
+        return False
+
+
 def setRespawn(userID, conn):
     try:
 
@@ -114,6 +141,21 @@ def getAllRespawns():
         return False
 
 
+def addPoints(userId, points):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            conn.execute(
+                'UPDATE Scores SET Points = Points + ? WHERE UserID = ?', (points, userId))
+
+            conn.commit()
+
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
 def addSnipe(winner, loser):
     try:
         with sqlite3.connect(code.DATABASE) as conn:
@@ -132,6 +174,9 @@ def addSnipe(winner, loser):
 
             c.execute(
                 'UPDATE Scores SET Respawn = NULL WHERE UserID = {}'.format(winner))
+
+            c.execute(
+                'UPDATE Scores SET Revenge = {} WHERE UserID = {}'.format(winner, loser))
 
             if not setRespawn(loser, conn):
                 return False
@@ -153,6 +198,20 @@ def getLeaderboard():
                 'SELECT UserID, Points, Snipes, Deaths FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10').fetchall()
 
             return rows
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def getLeader():
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            row = conn.execute(
+                'SELECT UserID FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 1').fetchone()
+
+            return row[0]
 
     except Exception as e:
         print(e)
@@ -218,10 +277,11 @@ def update_scores_names(members):
         with sqlite3.connect(code.DATABASE) as conn:
 
             for member in members:
-                conn.execute('UPDATE Scores SET Name = ? WHERE UserID = ?', (member.display_name, member.id))
-            
+                conn.execute('UPDATE Scores SET Name = ? WHERE UserID = ?',
+                             (member.display_name, member.id))
+
             conn.commit()
-        
+
         return True
 
     except:

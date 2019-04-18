@@ -69,6 +69,10 @@ class Snipes(commands.Cog):
                       help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipeUser(self, ctx: commands.Context, *losers: discord.Member):
 
+        if ctx.message.channel.id != self.snipe_channel and ctx.message.channel.id != self.test_channel:
+            await ctx.send('Please use the snipebot channel for sniping :)')
+            return
+
         today = datetime.now()
 
         if today.weekday() == self.club_day and today.hour >= self.club_start and today.hour < self.club_end:
@@ -86,6 +90,11 @@ class Snipes(commands.Cog):
         hits = []
         respawns = []
         errors = []
+        leaderId = code.getLeader()
+        revengeId = code.getRevengeUser(ctx.author.id)
+        bonusPoints = 0
+        leaderHit = False
+        revengeHit = False
 
         for loser in losers:
             if loser.bot:
@@ -93,30 +102,48 @@ class Snipes(commands.Cog):
             if code.isRespawning(loser.id):
                 respawns.append(loser.nick)
             elif code.addSnipe(ctx.author.id, loser.id):
+                if loser.id == leaderId:
+                    leaderHit = True
+                    bonusPoints += 3
+
+                if loser.id == revengeId:
+                    revengeHit = True
+                    bonusPoints += 2
+                    code.resetRevenge(ctx.author.id)
+
                 hits.append(loser.nick)
             else:
                 errors.append(loser.nick)
 
+        code.addPoints(ctx.author.id, bonusPoints)
+
         returnStr = ''
 
         if len(hits) == 1:
-            returnStr = 'SNIPED! {} has sniped {}! '.format(
+            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
                 ctx.author.nick, hits[0])
         elif len(hits) > 1:
-            returnStr = 'SNIPED! {} has sniped {}! '.format(
+            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
                 ctx.author.nick, ', '.join(hits[:-1]) + ' and ' + hits[-1])
 
+        if leaderHit:
+            returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
+
+        if revengeHit:
+            revenge = ctx.guild.get_member(revengeId)
+            returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(revenge.nick)
+
         if len(respawns) == 1:
-            returnStr += '{} was not hit because they\'re still respawning. '.format(
+            returnStr += '{} was not hit because they\'re still respawning.\n'.format(
                 respawns[0])
         elif len(respawns) > 1:
-            returnStr += '{} were not hit because they\'re still respawning. '.format(
+            returnStr += '{} were not hit because they\'re still respawning.\n'.format(
                 ', '.join(respawns[:-1]) + ' and ' + respawns[-1])
 
         if len(errors) == 1:
-            returnStr += 'Error registering hit on {}.'.format(errors[0])
+            returnStr += 'Error registering hit on {}.\n'.format(errors[0])
         elif len(errors) > 1:
-            returnStr += 'Error registering hit on {}.'.format(
+            returnStr += 'Error registering hit on {}.\n'.format(
                 ', '.join(errors[:-1]) + ' and ' + errors[-1])
 
         await ctx.send(returnStr)
