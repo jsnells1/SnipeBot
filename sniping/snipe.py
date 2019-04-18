@@ -24,7 +24,10 @@ class Snipes(commands.Cog):
     async def check_for_respawns(self):
         await self.bot.wait_until_ready()
 
-        channel = self.bot.get_channel(self.test_channel)
+        if code.DATABASE == code.DEV_DATABASE:
+            channel = self.bot.get_channel(self.test_channel)
+        else:
+            channel = self.bot.get_channel(self.snipe_channel)
         guild = self.bot.get_guild(self.indies_guild)
 
         while not self.bot.is_closed():

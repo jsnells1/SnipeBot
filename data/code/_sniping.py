@@ -1,6 +1,8 @@
 import sqlite3
 from datetime import datetime, timedelta
 
+import discord
+
 from data import code
 
 
@@ -148,7 +150,7 @@ def getLeaderboard():
         with sqlite3.connect(code.DATABASE) as conn:
 
             rows = conn.execute(
-                'SELECT * FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10').fetchall()
+                'SELECT UserID, Points, Snipes, Deaths FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10').fetchall()
 
             return rows
 
@@ -209,3 +211,18 @@ def setDeaths(userId, amt):
 
     finally:
         conn.close()
+
+
+def update_scores_names(members):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            for member in members:
+                conn.execute('UPDATE Scores SET Name = ? WHERE UserID = ?', (member.display_name, member.id))
+            
+            conn.commit()
+        
+        return True
+
+    except:
+        return False

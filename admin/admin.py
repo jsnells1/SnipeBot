@@ -169,3 +169,11 @@ class AdminCommands(commands.Cog):
         dm_channel = ctx.author.dm_channel
 
         await dm_channel.send('', files=[dev_db, live_db])
+
+    @commands.command(name='update_scores_names')
+    @commands.has_role(item='Dev Team')
+    async def update_scores_names(self, ctx: commands.Context):
+        if code.update_scores_names(ctx.guild.members):
+            await ctx.send('```Usernames updated.```')
+        else:
+            await ctx.send('```Usernames failed to be updated.```')
