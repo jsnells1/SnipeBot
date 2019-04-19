@@ -106,6 +106,19 @@ def resetRevenge(userID):
         return False
 
 
+def removeExpiredRevenges():
+    try:
+        today = datetime.now().timestamp()
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            conn.execute(
+                'UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today,))
+
+    except Exception as e:
+        print(e)
+        return False
+
+
 def setRespawn(userID, conn):
     try:
 
@@ -175,8 +188,10 @@ def addSnipe(winner, loser):
             c.execute(
                 'UPDATE Scores SET Respawn = NULL WHERE UserID = {}'.format(winner))
 
+            date = datetime.now() + timedelta(hours=3, minutes=30)
+
             c.execute(
-                'UPDATE Scores SET Revenge = {} WHERE UserID = {}'.format(winner, loser))
+                'UPDATE Scores SET Revenge = {}, RevengeTime = {} WHERE UserID = {}'.format(winner, date.timestamp(), loser))
 
             if not setRespawn(loser, conn):
                 return False
@@ -285,4 +300,19 @@ def update_scores_names(members):
         return True
 
     except:
+        return False
+
+
+def set_carepackage(keyword, expiration, hint):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            conn.execute(
+                'UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (keyword, expiration, hint,))
+            conn.commit()
+
+        return True
+
+    except Exception as e:
+        print(e)
         return False

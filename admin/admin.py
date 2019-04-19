@@ -111,7 +111,7 @@ class AdminCommands(commands.Cog):
             await ctx.send('Error changing database.')
 
     @commands.command(name='db_environment', hidden=True)
-    @commands.has_permissions(ban_members=True)
+    @commands.has_role(item='Dev Team')
     async def getDBEnvironment(self, ctx: commands.Context, env=None):
 
         if code.DATABASE == code.DEV_DATABASE:

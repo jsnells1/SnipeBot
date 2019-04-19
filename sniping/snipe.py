@@ -8,6 +8,8 @@ import discord.ext.commands as commands
 from data import code
 from data.code import Environment
 
+import sniping._carepackage as CarePackage
+
 
 class Snipes(commands.Cog):
     def __init__(self, bot, day, start, end):
@@ -19,9 +21,9 @@ class Snipes(commands.Cog):
         self.test_channel = 566076016825597972
         self.snipe_channel = 568115558206406656
         self.indies_guild = 427276681510649866
-        self.bg_task = self.bot.loop.create_task(self.check_for_respawns())
+        self.bg_task = self.bot.loop.create_task(self.maintenance())
 
-    async def check_for_respawns(self):
+    async def maintenance(self):
         await self.bot.wait_until_ready()
 
         if code.DATABASE == code.DEV_DATABASE:
@@ -32,6 +34,7 @@ class Snipes(commands.Cog):
 
         while not self.bot.is_closed():
             respawns = code.getAllRespawns()
+            code.removeExpiredRevenges()
 
             if len(respawns) > 0:
                 users = []
@@ -131,7 +134,8 @@ class Snipes(commands.Cog):
 
         if revengeHit:
             revenge = ctx.guild.get_member(revengeId)
-            returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(revenge.nick)
+            returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(
+                revenge.nick)
 
         if len(respawns) == 1:
             returnStr += '{} was not hit because they\'re still respawning.\n'.format(
@@ -214,3 +218,8 @@ This will fail.```')
                 ((deathColLength - len(str(row[3]))) * ' ') + '\n'
 
         await ctx.send('```' + output + '```')
+
+    @commands.command(name='set_carepackage', hidden=True)
+    @commands.has_role(item="Dev Team")
+    async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint):
+        await ctx.send(CarePackage.set_carepackage(keyword, time, hint))
