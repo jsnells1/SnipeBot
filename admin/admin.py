@@ -153,7 +153,7 @@ class AdminCommands(commands.Cog):
 
     # Return % of CPU used by user as a character string
     def getCPUuse(self):
-        return(str(os.popen("top -n1 | awk '/Cpu(s):/ {print $2}'").readline().strip()))
+        return(str(os.popen(r"top -n1 | awk '/Cpu\(s\):/ {print $2}'").readline().strip()))
 
     @commands.command(name='backup_db')
     @commands.has_role(item='Dev Team')
