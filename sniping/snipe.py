@@ -8,7 +8,7 @@ import discord.ext.commands as commands
 from data import code
 from data.code import Environment
 
-import sniping._carepackage as CarePackage
+import sniping.carepackage as CarePackage
 
 
 class Snipes(commands.Cog):
@@ -35,6 +35,9 @@ class Snipes(commands.Cog):
         while not self.bot.is_closed():
             respawns = code.getAllRespawns()
             code.removeExpiredRevenges()
+            
+            if code.remove_expired_carepackage():
+                print('Expired')
 
             if len(respawns) > 0:
                 users = []
@@ -220,6 +223,32 @@ This will fail.```')
         await ctx.send('```' + output + '```')
 
     @commands.command(name='set_carepackage', hidden=True)
-    @commands.has_role(item="Dev Team")
+    # @commands.has_role(item="Dev Team")
     async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint):
         await ctx.send(CarePackage.set_carepackage(keyword, time, hint))
+
+    @commands.command(name='get_hint', hidden=True)
+    # @commands.has_role(item="Dev Team")
+    async def get_carepackage_hint(self, ctx: commands.Context):
+        await ctx.send(CarePackage.get_hint())
+
+    @commands.command(name='announce_carepackage', hidden=True)
+    # @commands.has_role(item="Dev Team")
+    async def announce_carepackage(self, ctx: commands.Context):
+        channel = ctx.guild.get_channel(566052230256656415)
+        await channel.send('{} A carepackage is spawning soon!'.format(ctx.guild.default_role))
+
+    @commands.command(name='guess', hidden=True)
+    # @commands.has_role(item="Dev Team")
+    async def guess_keyword(self, ctx: commands.Context, keyword):
+        success, msg = CarePackage.isKeyword(keyword)
+
+        if not success:
+            if msg is not None:
+                await ctx.send(msg)
+            else:
+                await ctx.send('Sorry {}, that is not the keyword.'.format(ctx.author.display_name))
+            
+            return
+
+        await ctx.send('{} guessed the keyword correctly!'.format(ctx.author.display_name))

@@ -2,6 +2,7 @@ from enum import Enum
 
 from ._sniping import *
 from ._soapbox import *
+from ._carepackage import *
 
 LIVE_DATABASE = './data/database.db'
 DEV_DATABASE = './data/dev_database.db'

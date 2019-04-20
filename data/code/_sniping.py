@@ -302,17 +302,3 @@ def update_scores_names(members):
     except:
         return False
 
-
-def set_carepackage(keyword, expiration, hint):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-
-            conn.execute(
-                'UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (keyword, expiration, hint,))
-            conn.commit()
-
-        return True
-
-    except Exception as e:
-        print(e)
-        return False
