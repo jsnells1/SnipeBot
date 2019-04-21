@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from data import code
+from data import code as Database
 
 
 def set_carepackage(keyword, time, hint):
@@ -9,7 +9,7 @@ def set_carepackage(keyword, time, hint):
     except Exception as e:
         return str(e)
 
-    response = code.set_carepackage(keyword, expiration.timestamp(), hint)
+    response = Database.set_carepackage(keyword, expiration.timestamp(), hint)
 
     if not response:
         return '```Care Package failed to be set```'
@@ -18,7 +18,7 @@ def set_carepackage(keyword, time, hint):
 
 
 def get_hint():
-    hint = code.get_carepackage_hint()
+    hint = Database.get_carepackage_hint()
 
     if hint is None:
         return 'There is no hint available.'
@@ -30,7 +30,7 @@ def get_hint():
 
 
 def isKeyword(keyword):
-    key = code.getKeyword()
+    key = Database.getKeyword()
 
     if key is None:
         return False, 'There is no carepackage available.'
@@ -39,6 +39,7 @@ def isKeyword(keyword):
         return False, '```Error retrieving key.```'
 
     if key.lower() == keyword.lower():
+        Database.reset_carepackage()
         return True, None
     else:
         return False, None

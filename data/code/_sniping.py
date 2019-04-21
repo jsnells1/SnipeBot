@@ -33,7 +33,10 @@ def registerUser(userId):
         conn = sqlite3.connect(code.DATABASE)
         c = conn.cursor()
 
-        c.execute('INSERT INTO Scores (UserID) VALUES ({})'.format(userId))
+        c.execute(
+            'INSERT or IGNORE INTO Scores (UserID) VALUES ({})'.format(userId))
+        c.execute(
+            'INSERT or IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(userId))
         conn.commit()
 
         return True
@@ -181,6 +184,12 @@ def addSnipe(winner, loser):
                 'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
 
             c.execute(
+                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(winner))
+
+            c.execute(
+                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(loser))
+
+            c.execute(
                 'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1 WHERE UserID = {}'.format(winner))
             c.execute(
                 'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
@@ -301,4 +310,3 @@ def update_scores_names(members):
 
     except:
         return False
-

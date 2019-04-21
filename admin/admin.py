@@ -4,7 +4,7 @@ import discord
 import discord.ext.commands as commands
 
 
-from data import code
+from data import code as Database
 from data.code import Environment
 
 
@@ -30,7 +30,7 @@ class AdminCommands(commands.Cog):
             return
 
         if response.content == 'Y' or response.content == 'y':
-            success = code.removeUser(member.id)
+            success = Database.removeUser(member.id)
 
             if success:
                 await ctx.send('```User removed.```')
@@ -42,7 +42,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='RegisterUser', hidden=True)
     @commands.is_owner()
     async def registerUser(self, ctx: commands.Context, user: discord.Member):
-        response = code.registerUser(user.id)
+        response = Database.registerUser(user.id)
 
         msg = '```User succesfully added.```'
 
@@ -54,7 +54,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='SetSnipes', hidden=True)
     @commands.is_owner()
     async def setSnipes(self, ctx: commands.Context, user: discord.Member, amount: int):
-        response = code.setSnipes(user.id, amount)
+        response = Database.setSnipes(user.id, amount)
 
         msg = '```User snipes updated.```'
 
@@ -66,7 +66,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='SetPoints', hidden=True)
     @commands.is_owner()
     async def setPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
-        response = code.setPoints(user.id, amount)
+        response = Database.setPoints(user.id, amount)
 
         msg = '```User points updated.```'
 
@@ -78,7 +78,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='SetDeaths', hidden=True)
     @commands.is_owner()
     async def setDeaths(self, ctx: commands.Context, user: discord.Member, amount: int):
-        response = code.setDeaths(user.id, amount)
+        response = Database.setDeaths(user.id, amount)
 
         msg = '```User deaths updated.```'
 
@@ -103,7 +103,7 @@ class AdminCommands(commands.Cog):
             await ctx.send('Invalid argument.')
             return
 
-        response = code.switchDatabase(dbEnv)
+        response = Database.switchDatabase(dbEnv)
 
         if response:
             await ctx.send('Database successfully changed.')
@@ -114,7 +114,7 @@ class AdminCommands(commands.Cog):
     @commands.has_role(item='Dev Team')
     async def getDBEnvironment(self, ctx: commands.Context, env=None):
 
-        if code.DATABASE == code.DEV_DATABASE:
+        if Database.DATABASE == Database.DEV_DATABASE:
             await ctx.send('```Dev```')
         else:
             await ctx.send('```Live```')
@@ -173,7 +173,77 @@ class AdminCommands(commands.Cog):
     @commands.command(name='update_scores_names')
     @commands.has_role(item='Dev Team')
     async def update_scores_names(self, ctx: commands.Context):
-        if code.update_scores_names(ctx.guild.members):
+        if Database.update_scores_names(ctx.guild.members):
             await ctx.send('```Usernames updated.```')
         else:
             await ctx.send('```Usernames failed to be updated.```')
+
+    @commands.command(name='admin_snipe')
+    @commands.has_role(item='Dev Team')
+    async def admin_snipe(self, ctx: commands.Context, *members: discord.Member):
+        if len(members) < 1:
+            return
+
+        sniper = members[0]
+
+        hits = []
+        respawns = []
+        errors = []
+        leaderId = Database.getLeader()
+        revengeId = Database.getRevengeUser(sniper.id)
+        bonusPoints = 0
+        leaderHit = False
+        revengeHit = False
+
+        for loser in members[1:]:
+            if loser.bot:
+                continue
+            if Database.isRespawning(loser.id):
+                respawns.append(loser.display_name)
+            elif Database.addSnipe(sniper.id, loser.id):
+                if loser.id == leaderId:
+                    leaderHit = True
+                    bonusPoints += 3
+
+                if loser.id == revengeId:
+                    revengeHit = True
+                    bonusPoints += 2
+                    Database.resetRevenge(sniper.id)
+
+                hits.append(loser.nick)
+            else:
+                errors.append(loser.nick)
+
+        Database.addPoints(sniper.id, bonusPoints)
+
+        returnStr = ''
+
+        if len(hits) == 1:
+            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
+                sniper.nick, hits[0])
+        elif len(hits) > 1:
+            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
+                sniper.nick, ', '.join(hits[:-1]) + ' and ' + hits[-1])
+
+        if leaderHit:
+            returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
+
+        if revengeHit:
+            revenge = ctx.guild.get_member(revengeId)
+            returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(
+                revenge.nick)
+
+        if len(respawns) == 1:
+            returnStr += '{} was not hit because they\'re still respawning.\n'.format(
+                respawns[0])
+        elif len(respawns) > 1:
+            returnStr += '{} were not hit because they\'re still respawning.\n'.format(
+                ', '.join(respawns[:-1]) + ' and ' + respawns[-1])
+
+        if len(errors) == 1:
+            returnStr += 'Error registering hit on {}.\n'.format(errors[0])
+        elif len(errors) > 1:
+            returnStr += 'Error registering hit on {}.\n'.format(
+                ', '.join(errors[:-1]) + ' and ' + errors[-1])
+
+        await ctx.send(returnStr)

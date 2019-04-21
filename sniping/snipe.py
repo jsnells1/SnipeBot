@@ -5,7 +5,7 @@ from datetime import datetime
 import discord
 import discord.ext.commands as commands
 
-from data import code
+from data import code as Database
 from data.code import Environment
 
 import sniping.carepackage as CarePackage
@@ -26,17 +26,17 @@ class Snipes(commands.Cog):
     async def maintenance(self):
         await self.bot.wait_until_ready()
 
-        if code.DATABASE == code.DEV_DATABASE:
+        if Database.DATABASE == Database.DEV_DATABASE:
             channel = self.bot.get_channel(self.test_channel)
         else:
             channel = self.bot.get_channel(self.snipe_channel)
         guild = self.bot.get_guild(self.indies_guild)
 
         while not self.bot.is_closed():
-            respawns = code.getAllRespawns()
-            code.removeExpiredRevenges()
-            
-            if code.remove_expired_carepackage():
+            respawns = Database.getAllRespawns()
+            Database.removeExpiredRevenges()
+
+            if Database.remove_expired_carepackage():
                 print('Expired')
 
             if len(respawns) > 0:
@@ -53,19 +53,19 @@ class Snipes(commands.Cog):
                       help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
     async def getPoints(self, ctx: commands.Context):
         author = ctx.message.author
-        points = code.getUserPoints(author.id)
+        points = Database.getUserPoints(author.id)
 
         if not points:
             await ctx.send("Error retrieving points...")
 
         if points is None:
-            success = code.registerUser(ctx.author.id)
+            success = Database.registerUser(ctx.author.id)
 
             if not success:
                 await ctx.send('User was not found and failed to be registered.')
                 return
             else:
-                points = code.getUserPoints(author.id)
+                points = Database.getUserPoints(author.id)
 
         await ctx.send("{} you have {} point(s)".format(author.mention, points))
 
@@ -96,8 +96,8 @@ class Snipes(commands.Cog):
         hits = []
         respawns = []
         errors = []
-        leaderId = code.getLeader()
-        revengeId = code.getRevengeUser(ctx.author.id)
+        leaderId = Database.getLeader()
+        revengeId = Database.getRevengeUser(ctx.author.id)
         bonusPoints = 0
         leaderHit = False
         revengeHit = False
@@ -105,9 +105,9 @@ class Snipes(commands.Cog):
         for loser in losers:
             if loser.bot:
                 continue
-            if code.isRespawning(loser.id):
+            if Database.isRespawning(loser.id):
                 respawns.append(loser.nick)
-            elif code.addSnipe(ctx.author.id, loser.id):
+            elif Database.addSnipe(ctx.author.id, loser.id):
                 if loser.id == leaderId:
                     leaderHit = True
                     bonusPoints += 3
@@ -115,13 +115,13 @@ class Snipes(commands.Cog):
                 if loser.id == revengeId:
                     revengeHit = True
                     bonusPoints += 2
-                    code.resetRevenge(ctx.author.id)
+                    Database.resetRevenge(ctx.author.id)
 
                 hits.append(loser.nick)
             else:
                 errors.append(loser.nick)
 
-        code.addPoints(ctx.author.id, bonusPoints)
+        Database.addPoints(ctx.author.id, bonusPoints)
 
         returnStr = ''
 
@@ -168,7 +168,7 @@ This will fail.```')
 
     @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
-        rows = code.getLeaderboard()
+        rows = Database.getLeaderboard()
         if not rows:
             await ctx.send('```Error retrieving leaderboard```')
             return
@@ -248,7 +248,10 @@ This will fail.```')
                 await ctx.send(msg)
             else:
                 await ctx.send('Sorry {}, that is not the keyword.'.format(ctx.author.display_name))
-            
+
             return
 
-        await ctx.send('{} guessed the keyword correctly!'.format(ctx.author.display_name))
+        reward = Database.get_random_reward()
+        CarePackage.get_reward(reward[0], ctx.author.id)
+
+        await ctx.send('{} guessed the keyword correctly! You earned {}'.format(ctx.author.display_name, reward[1]))
