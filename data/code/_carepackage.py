@@ -58,8 +58,11 @@ def remove_expired_carepackage():
                 'SELECT COUNT() FROM CarePackage WHERE Expiration < ?', (now,)).fetchone()
 
             if row[0] == 1:
-                row = conn.execute(
+                conn.execute(
                     'UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (None, None, None,))
+
+                conn.commit()
+
                 return True
 
             return False
@@ -90,6 +93,8 @@ def reset_carepackage():
             conn.execute(
                 'UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (None, None, None,))
 
+            conn.commit()
+
         return True
 
     except Exception as e:
@@ -101,13 +106,36 @@ def set_user_multiplier(userId, multiplier):
     try:
         with sqlite3.connect(code.DATABASE) as conn:
 
-            expiration = datetime.now() + timedelta(hours=12)
+            expiration = datetime.now() + timedelta(hours=24)
 
             conn.execute(
                 'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
 
             conn.execute(
-                'UPDATE SnipingMods SET Multiplier = ?, Expiration = ? WHERE UserID = ?', (multiplier, expiration, userId,))
+                'UPDATE SnipingMods SET Multiplier = ?, Expiration = ? WHERE UserID = ?', (multiplier, expiration.timestamp(), userId,))
+
+            conn.commit()
+
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def set_user_immunity(userId):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            expiration = datetime.now() + timedelta(hours=24)
+
+            conn.execute(
+                'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
+
+            conn.execute(
+                'UPDATE SnipingMods SET Immunity = ?, ImmunExpiration = ? WHERE UserID = ?', (1, expiration.timestamp(), userId,))
+            
+            conn.commit()
 
         return True
 

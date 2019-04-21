@@ -106,7 +106,7 @@ class Snipes(commands.Cog):
             if loser.bot:
                 continue
             if Database.isRespawning(loser.id):
-                respawns.append(loser.nick)
+                respawns.append(loser.display_name)
             elif Database.addSnipe(ctx.author.id, loser.id):
                 if loser.id == leaderId:
                     leaderHit = True
@@ -117,9 +117,9 @@ class Snipes(commands.Cog):
                     bonusPoints += 2
                     Database.resetRevenge(ctx.author.id)
 
-                hits.append(loser.nick)
+                hits.append(loser.display_name)
             else:
-                errors.append(loser.nick)
+                errors.append(loser.display_name)
 
         Database.addPoints(ctx.author.id, bonusPoints)
 
@@ -127,10 +127,10 @@ class Snipes(commands.Cog):
 
         if len(hits) == 1:
             returnStr += 'SNIPED! {} has sniped {}!\n'.format(
-                ctx.author.nick, hits[0])
+                ctx.author.display_name, hits[0])
         elif len(hits) > 1:
             returnStr += 'SNIPED! {} has sniped {}!\n'.format(
-                ctx.author.nick, ', '.join(hits[:-1]) + ' and ' + hits[-1])
+                ctx.author.display_name, ', '.join(hits[:-1]) + ' and ' + hits[-1])
 
         if leaderHit:
             returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
@@ -138,7 +138,7 @@ class Snipes(commands.Cog):
         if revengeHit:
             revenge = ctx.guild.get_member(revengeId)
             returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(
-                revenge.nick)
+                revenge.display_name)
 
         if len(respawns) == 1:
             returnStr += '{} was not hit because they\'re still respawning.\n'.format(
@@ -252,6 +252,6 @@ This will fail.```')
             return
 
         reward = Database.get_random_reward()
-        CarePackage.get_reward(reward[0], ctx.author.id)
+        msg = CarePackage.get_reward(reward[0], ctx.author.id)
 
-        await ctx.send('{} guessed the keyword correctly! You earned {}'.format(ctx.author.display_name, reward[1]))
+        await ctx.send('{} guessed the keyword correctly! You open the care package and earn {}!'.format(ctx.author.display_name, msg))
