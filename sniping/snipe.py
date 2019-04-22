@@ -47,6 +47,15 @@ class Snipes(commands.Cog):
                 await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
             await asyncio.sleep(60)
 
+    def joinListWithAnd(self, data):
+        if len(data) == 0:
+            return None
+
+        if len(data) == 1:
+            return data[0]
+
+        return ', '.join(data[:-1]) + ' and ' + data[-1]
+
     # Returns a user's points or snipes
 
     @commands.command(name='Points', brief='Returns the calling user\'s points (or snipes)',
@@ -94,6 +103,7 @@ class Snipes(commands.Cog):
             return
 
         hits = []
+        immune = []
         respawns = []
         errors = []
         leaderId = Database.getLeader()
@@ -101,13 +111,29 @@ class Snipes(commands.Cog):
         bonusPoints = 0
         leaderHit = False
         revengeHit = False
+        hasPotato = Database.has_potato(ctx.author.id)
 
-        for loser in losers:
+        for i, loser in enumerate(losers):
+
+            # Ignore bots
             if loser.bot:
                 continue
+
+            # Ignore immune users
+            if Database.isImmune(loser.id):
+                immune.append(loser.display_name)
+                continue
+
+            # Ignore respawning users
             if Database.isRespawning(loser.id):
                 respawns.append(loser.display_name)
-            elif Database.addSnipe(ctx.author.id, loser.id):
+                continue
+
+            # Try to snipe the user
+            if Database.addSnipe(ctx.author.id, loser.id):
+                if i == 0:
+                    Database.pass_potato(ctx.author.id, loser.id)
+
                 if loser.id == leaderId:
                     leaderHit = True
                     bonusPoints += 3
@@ -125,12 +151,12 @@ class Snipes(commands.Cog):
 
         returnStr = ''
 
-        if len(hits) == 1:
+        if len(hits) > 0:
             returnStr += 'SNIPED! {} has sniped {}!\n'.format(
-                ctx.author.display_name, hits[0])
-        elif len(hits) > 1:
-            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
-                ctx.author.display_name, ', '.join(hits[:-1]) + ' and ' + hits[-1])
+                ctx.author.display_name, self.joinListWithAnd(hits))
+
+        if hasPotato:
+            returnStr += '{} has passed the potato to {}! Get rid of it before it explodes!!!\n'.format(ctx.author.display_name, losers[0].display_name)
 
         if leaderHit:
             returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
@@ -140,18 +166,17 @@ class Snipes(commands.Cog):
             returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(
                 revenge.display_name)
 
-        if len(respawns) == 1:
-            returnStr += '{} was not hit because they\'re still respawning.\n'.format(
-                respawns[0])
-        elif len(respawns) > 1:
-            returnStr += '{} were not hit because they\'re still respawning.\n'.format(
-                ', '.join(respawns[:-1]) + ' and ' + respawns[-1])
+        if len(respawns) > 0:
+            returnStr += '{} was/were not hit because they\'re still respawning.\n'.format(
+                self.joinListWithAnd(respawns))
 
-        if len(errors) == 1:
-            returnStr += 'Error registering hit on {}.\n'.format(errors[0])
-        elif len(errors) > 1:
+        if len(immune) > 0:
+            returnStr += '{} was/were not hit because they\'re immune!\n'.format(
+                self.joinListWithAnd(immune))
+
+        if len(errors) > 0:
             returnStr += 'Error registering hit on {}.\n'.format(
-                ', '.join(errors[:-1]) + ' and ' + errors[-1])
+                self.joinListWithAnd(errors))
 
         await ctx.send(returnStr)
 
@@ -163,6 +188,84 @@ Ensure you write the command as !snipe @Target1 @Target2 etc..\n\
 Be sure not to write any other text like:\n\
 \t!snipe @Justin Got you Justin!\n\
 This will fail.```')
+
+    @commands.command(name='admin_snipe', hidden=True)
+    @commands.has_role(item='Dev Team')
+    async def admin_snipe(self, ctx: commands.Context, *members: discord.Member):
+        if len(members) < 1:
+            return
+
+        sniper = members[0]
+
+        hits = []
+        immune = []
+        respawns = []
+        errors = []
+        leaderId = Database.getLeader()
+        revengeId = Database.getRevengeUser(sniper.id)
+        bonusPoints = 0
+        leaderHit = False
+        revengeHit = False
+
+        for loser in members[1:]:
+
+            # Ignore bots
+            if loser.bot:
+                continue
+
+            # Ignore immune users
+            if Database.isImmune(loser.id):
+                immune.append(loser.display_name)
+                continue
+
+            # Ignore respawning users
+            if Database.isRespawning(loser.id):
+                respawns.append(loser.display_name)
+                continue
+
+            if Database.addSnipe(sniper.id, loser.id):
+                if loser.id == leaderId:
+                    leaderHit = True
+                    bonusPoints += 3
+
+                if loser.id == revengeId:
+                    revengeHit = True
+                    bonusPoints += 2
+                    Database.resetRevenge(sniper.id)
+
+                hits.append(loser.nick)
+            else:
+                errors.append(loser.nick)
+
+        Database.addPoints(sniper.id, bonusPoints)
+
+        returnStr = ''
+
+        if len(hits) > 0:
+            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
+                sniper.display_name, self.joinListWithAnd(hits))
+
+        if leaderHit:
+            returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
+
+        if revengeHit:
+            revenge = ctx.guild.get_member(revengeId)
+            returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(
+                revenge.display_name)
+
+        if len(respawns) > 0:
+            returnStr += '{} was/were not hit because they\'re still respawning.\n'.format(
+                self.joinListWithAnd(respawns))
+
+        if len(immune) > 0:
+            returnStr += '{} was/were not hit because they\'re immune!\n'.format(
+                self.joinListWithAnd(immune))
+
+        if len(errors) > 0:
+            returnStr += 'Error registering hit on {}.\n'.format(
+                self.joinListWithAnd(errors))
+
+        await ctx.send(returnStr)
 
     # Returns the current leaderboard
 

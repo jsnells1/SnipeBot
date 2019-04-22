@@ -130,7 +130,7 @@ def set_user_immunity(userId, expiration):
                 'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
 
             conn.execute(
-                'UPDATE SnipingMods SET Immunity = ?, ImmunExpiration = ? WHERE UserID = ?', (1, expiration.timestamp(), userId,))
+                'UPDATE SnipingMods SET ImmunExpiration = ? WHERE UserID = ?', (expiration.timestamp(), userId,))
 
             conn.commit()
 
@@ -164,6 +164,37 @@ def set_user_potato(userId, expiration):
         with sqlite3.connect(code.DATABASE) as conn:
             conn.execute(
                 'INSERT INTO HotPotato (Owner, Explosion) VALUES (?, ?)', (userId, expiration,))
+
+            conn.commit()
+
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def has_potato(userId):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            hasPotato = conn.execute(
+                'SELECT * FROM HotPotato WHERE Owner = ?', (userId,)).fetchone()
+
+            if hasPotato is None:
+                return False         
+
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def pass_potato(sender, receiver):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            conn.execute(
+                'UPDATE HotPotato SET Owner = ? WHERE Owner = ?', (receiver, sender,))
 
             conn.commit()
 
