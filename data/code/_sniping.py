@@ -183,11 +183,11 @@ def addSnipe(winner, loser):
             c.execute(
                 'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
 
-            c.execute(
-                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(winner))
+            #c.execute(
+            #    'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(winner))
 
-            c.execute(
-                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(loser))
+            #c.execute(
+            #    'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(loser))
 
             c.execute(
                 'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1 WHERE UserID = {}'.format(winner))

@@ -1,34 +1,50 @@
 import random
+from datetime import datetime, timedelta
 
 from data import code as Database
 
 # id 1
 
 
-def get_bonus_points(userId):
-    Database.addPoints(userId, 8)
+def set_bonus_points(userId):
+    bonusPoints = 8
 
-    return '8 bonus points immediately'
+    Database.addPoints(userId, bonusPoints)
+
+    return '{} bonus points immediately'.format(bonusPoints)
 
 
 # id 2
 def set_multiplier(userId):
-    Database.set_user_multiplier(userId, 3)
+    multiplier = 3
 
-    return 'a x3 point multiplier for 24 hours'
+    Database.set_user_multiplier(userId, multiplier)
+
+    return 'a x{} point multiplier for 24 hours'.format(multiplier)
 
 
 # id 3
 def set_smoke_bomb(userId):
-    Database.set_user_immunity(userId)
+    Database.set_user_smokebomb(userId)
 
     return 'immunity for 24 hours'
 
+# id 4
+
+
+def set_hot_potato(userId):
+    expiration = datetime.now() + timedelta(hours=24)
+
+    Database.set_user_potato(userId, expiration.timestamp())
+
+    return 'a... Hot Potato Bomb! Uh Oh! Snipe someone else to pass it to someone else before it explodes'
+
 
 function_map = {
-    1: get_bonus_points,
+    1: set_bonus_points,
     2: set_multiplier,
-    3: set_smoke_bomb
+    3: set_smoke_bomb,
+    4: set_hot_potato
 }
 
 

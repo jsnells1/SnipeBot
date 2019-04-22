@@ -123,18 +123,48 @@ def set_user_multiplier(userId, multiplier):
         return False
 
 
-def set_user_immunity(userId):
+def set_user_immunity(userId, expiration):
     try:
         with sqlite3.connect(code.DATABASE) as conn:
-
-            expiration = datetime.now() + timedelta(hours=24)
-
             conn.execute(
                 'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
 
             conn.execute(
                 'UPDATE SnipingMods SET Immunity = ?, ImmunExpiration = ? WHERE UserID = ?', (1, expiration.timestamp(), userId,))
-            
+
+            conn.commit()
+
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def set_user_smokebomb(userId):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            conn.execute(
+                'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
+
+            conn.execute(
+                'UPDATE SnipingMods SET SmokeBomb = ? WHERE UserID = ?', (1, userId,))
+
+            conn.commit()
+
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def set_user_potato(userId, expiration):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            conn.execute(
+                'INSERT INTO HotPotato (Owner, Explosion) VALUES (?, ?)', (userId, expiration,))
+
             conn.commit()
 
         return True
