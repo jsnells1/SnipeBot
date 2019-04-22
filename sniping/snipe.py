@@ -189,10 +189,10 @@ class Snipes(commands.Cog):
 
         returnStr += '\n```Kill Summary:\n\n'
         returnStr += 'Kills:                {}\n'.format(len(hits))
-        returnStr += 'Leader Kill Points:   {}\n'.format(
-            '3' if leaderHit else '0')
-        returnStr += 'Revenge Kill Points:  {}\n'.format(
-            '2' if revengeHit else '0')
+        if leaderHit:
+            returnStr += 'Leader Kill Points:   3\n'
+        if revengeHit:
+            returnStr += 'Revenge Kill Points:  2\n'
         returnStr += 'Multiplier:          x{}\n'.format(multiplier)
         returnStr += 'Total Points:         {}```'.format(
             totalPoints + len(hits))
