@@ -184,10 +184,10 @@ def addSnipe(winner, loser):
                 'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
 
             c.execute(
-               'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(winner))
+                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(winner))
 
             c.execute(
-               'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(loser))
+                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(loser))
 
             c.execute(
                 'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1 WHERE UserID = {}'.format(winner))
@@ -318,8 +318,10 @@ def isImmune(userId):
 
             now = datetime.now().timestamp()
 
-            conn.execute('UPDATE SnipingMods SET Immunity = ? WHERE UserID = ? and Immunity < ?', (None, userId, now))
-            immune = conn.execute('SELECT Immunity FROM SnipingMods WHERE UserID = ? and Immunity > ?', (userId, now)).fetchone()
+            conn.execute(
+                'UPDATE SnipingMods SET Immunity = ? WHERE UserID = ? and Immunity < ?', (None, userId, now))
+            immune = conn.execute(
+                'SELECT Immunity FROM SnipingMods WHERE UserID = ? and Immunity > ?', (userId, now)).fetchone()
 
             conn.commit()
 
@@ -327,6 +329,28 @@ def isImmune(userId):
                 return False
 
         return True
+
+    except:
+        return False
+
+
+def get_multiplier(userId):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            now = datetime.now().timestamp()
+
+            conn.execute(
+                'UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE MultiExpiration < ?', (None, None, now))
+            multi = conn.execute(
+                'SELECT Multiplier FROM SnipingMods WHERE UserID = ? MultiExpiration > ?', (userId, now)).fetchone()
+
+            conn.commit()
+
+            if multi is None:
+                return 1
+
+            return int(multi[0])
 
     except:
         return False

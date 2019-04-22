@@ -57,7 +57,7 @@ def remove_expired_carepackage():
             row = conn.execute(
                 'SELECT COUNT() FROM CarePackage WHERE Expiration < ?', (now,)).fetchone()
 
-            if row[0] == 1:
+            if row is not None and row[0] == 1:
                 conn.execute(
                     'UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (None, None, None,))
 
@@ -112,7 +112,7 @@ def set_user_multiplier(userId, multiplier):
                 'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
 
             conn.execute(
-                'UPDATE SnipingMods SET Multiplier = ?, Expiration = ? WHERE UserID = ?', (multiplier, expiration.timestamp(), userId,))
+                'UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE UserID = ?', (multiplier, expiration.timestamp(), userId,))
 
             conn.commit()
 

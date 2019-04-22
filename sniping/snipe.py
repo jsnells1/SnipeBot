@@ -113,6 +113,11 @@ class Snipes(commands.Cog):
         revengeHit = False
         hasPotato = Database.has_potato(ctx.author.id)
 
+        multiplier = Database.get_multiplier(ctx.author.id)
+
+        if multiplier is None or not multiplier:
+            multiplier = 1
+
         for i, loser in enumerate(losers):
 
             # Ignore bots
@@ -131,7 +136,7 @@ class Snipes(commands.Cog):
 
             # Try to snipe the user
             if Database.addSnipe(ctx.author.id, loser.id):
-                if i == 0:
+                if i == 0 and hasPotato:
                     Database.pass_potato(ctx.author.id, loser.id)
 
                 if loser.id == leaderId:
@@ -147,7 +152,10 @@ class Snipes(commands.Cog):
             else:
                 errors.append(loser.display_name)
 
-        Database.addPoints(ctx.author.id, bonusPoints)
+        totalPoints = bonusPoints * multiplier + \
+            (len(hits) * multiplier - len(hits))
+
+        Database.addPoints(ctx.author.id, totalPoints)
 
         returnStr = ''
 
@@ -156,7 +164,8 @@ class Snipes(commands.Cog):
                 ctx.author.display_name, self.joinListWithAnd(hits))
 
         if hasPotato:
-            returnStr += '{} has passed the potato to {}! Get rid of it before it explodes!!!\n'.format(ctx.author.display_name, losers[0].display_name)
+            returnStr += '{} has passed the potato to {}! Get rid of it before it explodes!!!\n'.format(
+                ctx.author.display_name, losers[0].display_name)
 
         if leaderHit:
             returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
@@ -177,6 +186,16 @@ class Snipes(commands.Cog):
         if len(errors) > 0:
             returnStr += 'Error registering hit on {}.\n'.format(
                 self.joinListWithAnd(errors))
+
+        returnStr += '\n```Kill Summary:\n\n'
+        returnStr += 'Kills:                {}\n'.format(len(hits))
+        returnStr += 'Leader Kill Points:   {}\n'.format(
+            '3' if leaderHit else '0')
+        returnStr += 'Revenge Kill Points:  {}\n'.format(
+            '2' if revengeHit else '0')
+        returnStr += 'Multiplier:          x{}\n'.format(multiplier)
+        returnStr += 'Total Points:         {}```'.format(
+            totalPoints + len(hits))
 
         await ctx.send(returnStr)
 
@@ -202,12 +221,18 @@ This will fail.```')
         respawns = []
         errors = []
         leaderId = Database.getLeader()
-        revengeId = Database.getRevengeUser(sniper.id)
+        revengeId = Database.getRevengeUser(ctx.author.id)
         bonusPoints = 0
         leaderHit = False
         revengeHit = False
+        hasPotato = Database.has_potato(ctx.author.id)
 
-        for loser in members[1:]:
+        multiplier = Database.get_multiplier(ctx.author.id)
+
+        if multiplier is None or not multiplier:
+            multiplier = 1
+
+        for i, loser in enumerate(members[1:]):
 
             # Ignore bots
             if loser.bot:
@@ -224,6 +249,9 @@ This will fail.```')
                 continue
 
             if Database.addSnipe(sniper.id, loser.id):
+                if i == 0 and hasPotato:
+                    Database.pass_potato(ctx.author.id, loser.id)
+
                 if loser.id == leaderId:
                     leaderHit = True
                     bonusPoints += 3
@@ -237,7 +265,10 @@ This will fail.```')
             else:
                 errors.append(loser.nick)
 
-        Database.addPoints(sniper.id, bonusPoints)
+        totalPoints = bonusPoints * multiplier + \
+            (len(hits) * multiplier - len(hits))
+
+        Database.addPoints(sniper.id, totalPoints)
 
         returnStr = ''
 
