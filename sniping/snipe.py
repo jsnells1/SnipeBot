@@ -325,6 +325,10 @@ class Snipes(commands.Cog):
         await ctx.send('```' + output + '```')
 
     # region CarePackage Commands
+    @commands.command(name='smoke_bomb', hidden=True)
+    async def use_smoke_bomb(self, ctx: commands.Context, keyword, time, hint):
+        await ctx.send(CarePackage.set_carepackage(keyword, time, hint))
+
     @commands.command(name='set_carepackage', hidden=True)
     # @commands.has_role(item="Dev Team")
     async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint):

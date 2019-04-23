@@ -27,7 +27,7 @@ def set_multiplier(userId):
 def set_smoke_bomb(userId):
     Database.set_user_smokebomb(userId)
 
-    return 'immunity for 24 hours'
+    return 'a smoke bomb! Use it whenever you\'d like for 3 hours of immunity!'
 
 # id 4
 
