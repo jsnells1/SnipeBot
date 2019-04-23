@@ -9,6 +9,7 @@ from data import code as Database
 from data.code import Environment
 
 import sniping.carepackage as CarePackage
+from .formatting import SnipingFormatter
 
 
 class Snipes(commands.Cog):
@@ -36,6 +37,7 @@ class Snipes(commands.Cog):
             respawns = Database.getAllRespawns()
             Database.removeExpiredRevenges()
 
+            # TODO Send message to channel
             if Database.remove_expired_carepackage():
                 print('Expired')
 
@@ -46,15 +48,6 @@ class Snipes(commands.Cog):
 
                 await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
             await asyncio.sleep(60)
-
-    def joinListWithAnd(self, data):
-        if len(data) == 0:
-            return None
-
-        if len(data) == 1:
-            return data[0]
-
-        return ', '.join(data[:-1]) + ' and ' + data[-1]
 
     # Returns a user's points or snipes
 
@@ -78,8 +71,7 @@ class Snipes(commands.Cog):
 
         await ctx.send("{} you have {} point(s)".format(author.mention, points))
 
-    # Registers a snipe with snipe bot
-
+    # region Register Snipes
     @commands.command(name='Snipe', brief='Registers a snipe from the calling user to the mentioned user', usage='<@TargetUser>',
                       help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipeUser(self, ctx: commands.Context, *losers: discord.Member):
@@ -157,61 +149,38 @@ class Snipes(commands.Cog):
 
         Database.addPoints(ctx.author.id, totalPoints)
 
-        returnStr = ''
+        output = SnipingFormatter()
+        output.hits = hits
+        output.immune = immune
+        output.respawns = respawns
+        output.errors = errors
+        output.author = ctx.author
+        output.hasPotato = hasPotato
+        output.leaderHit = leaderHit
+        output.revengeHit = revengeHit
+        output.potatoName = losers[0].display_name
+        output.revengeMember = ctx.guild.get_member(revengeId)
+        output.totalPoints = totalPoints
+        output.multiplier = multiplier
 
-        if len(hits) > 0:
-            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
-                ctx.author.display_name, self.joinListWithAnd(hits))
-
-        if hasPotato:
-            returnStr += '{} has passed the potato to {}! Get rid of it before it explodes!!!\n'.format(
-                ctx.author.display_name, losers[0].display_name)
-
-        if leaderHit:
-            returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
-
-        if revengeHit:
-            revenge = ctx.guild.get_member(revengeId)
-            returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(
-                revenge.display_name)
-
-        if len(respawns) > 0:
-            returnStr += '{} was/were not hit because they\'re still respawning.\n'.format(
-                self.joinListWithAnd(respawns))
-
-        if len(immune) > 0:
-            returnStr += '{} was/were not hit because they\'re immune!\n'.format(
-                self.joinListWithAnd(immune))
-
-        if len(errors) > 0:
-            returnStr += 'Error registering hit on {}.\n'.format(
-                self.joinListWithAnd(errors))
-
-        returnStr += '\n```Kill Summary:\n\n'
-        returnStr += 'Kills:                {}\n'.format(len(hits))
-        if leaderHit:
-            returnStr += 'Leader Kill Points:   3\n'
-        if revengeHit:
-            returnStr += 'Revenge Kill Points:  2\n'
-        returnStr += 'Multiplier:          x{}\n'.format(multiplier)
-        returnStr += 'Total Points:         {}```'.format(
-            totalPoints + len(hits))
-
-        await ctx.send(returnStr)
+        await ctx.send(output.formatSnipeString())
 
     @snipeUser.error
     async def sniperUser_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('```Command failed (Bad Arguments): Please resubmit your snipe\n\
-Ensure you write the command as !snipe @Target1 @Target2 etc..\n\
-Be sure not to write any other text like:\n\
-\t!snipe @Justin Got you Justin!\n\
-This will fail.```')
+            error = 'Command failed(Bad Arguments): Please resubmit your snipe\n'
+            error += 'Ensure you write the command as !snipe @Target1 @Target2 etc..\n'
+            error += 'Be sure not to write any other text like: \n'
+            error += '\t!snipe @Justin Got you Justin!\n'
+            error += 'This will fail.'
+
+            await ctx.send('```' + error + '```')
 
     @commands.command(name='admin_snipe', hidden=True)
     @commands.has_role(item='Dev Team')
     async def admin_snipe(self, ctx: commands.Context, *members: discord.Member):
-        if len(members) < 1:
+        if len(members) <= 1:
+            await ctx.send('```Need atleast 2 arguments.```')
             return
 
         sniper = members[0]
@@ -270,33 +239,22 @@ This will fail.```')
 
         Database.addPoints(sniper.id, totalPoints)
 
-        returnStr = ''
+        output = SnipingFormatter()
+        output.hits = hits
+        output.immune = immune
+        output.respawns = respawns
+        output.errors = errors
+        output.author = ctx.author
+        output.hasPotato = hasPotato
+        output.leaderHit = leaderHit
+        output.revengeHit = revengeHit
+        output.potatoName = members[1].display_name
+        output.revengeMember = ctx.guild.get_member(revengeId)
+        output.totalPoints = totalPoints
+        output.multiplier = multiplier
 
-        if len(hits) > 0:
-            returnStr += 'SNIPED! {} has sniped {}!\n'.format(
-                sniper.display_name, self.joinListWithAnd(hits))
-
-        if leaderHit:
-            returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
-
-        if revengeHit:
-            revenge = ctx.guild.get_member(revengeId)
-            returnStr += 'Revenge is so sweet! You got revenge on {}! Enjoy 2 bonus points!\n'. format(
-                revenge.display_name)
-
-        if len(respawns) > 0:
-            returnStr += '{} was/were not hit because they\'re still respawning.\n'.format(
-                self.joinListWithAnd(respawns))
-
-        if len(immune) > 0:
-            returnStr += '{} was/were not hit because they\'re immune!\n'.format(
-                self.joinListWithAnd(immune))
-
-        if len(errors) > 0:
-            returnStr += 'Error registering hit on {}.\n'.format(
-                self.joinListWithAnd(errors))
-
-        await ctx.send(returnStr)
+        await ctx.send(output.formatSnipeString())
+    # endregion
 
     # Returns the current leaderboard
 
@@ -356,6 +314,7 @@ This will fail.```')
 
         await ctx.send('```' + output + '```')
 
+    # region CarePackage Commands
     @commands.command(name='set_carepackage', hidden=True)
     # @commands.has_role(item="Dev Team")
     async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint):
@@ -389,3 +348,5 @@ This will fail.```')
         msg = CarePackage.get_reward(reward[0], ctx.author.id)
 
         await ctx.send('{} guessed the keyword correctly! You open the care package and earn {}!'.format(ctx.author.display_name, msg))
+
+    # endregion
