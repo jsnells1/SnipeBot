@@ -181,7 +181,7 @@ def has_potato(userId):
                 'SELECT * FROM HotPotato WHERE Owner = ?', (userId,)).fetchone()
 
             if hasPotato is None:
-                return False         
+                return False
 
         return True
 
@@ -199,6 +199,34 @@ def pass_potato(sender, receiver):
             conn.commit()
 
         return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def check_exploded_potatoes():
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            now = datetime.now().timestamp()
+
+            pointDeduction = 3
+
+            rows = conn.execute(
+                'SELECT Owner FROM HotPotato WHERE Explosion < ?', (now,)).fetchall()
+
+            rows = [row[0] for row in rows]
+
+            for userId in rows:
+                conn.execute(
+                    'UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID = ?', (pointDeduction, userId,))
+
+            conn.execute(
+                'DELETE FROM HotPotato WHERE Explosion < ?', (now,))
+
+            conn.commit()
+
+            return rows
 
     except Exception as e:
         print(e)

@@ -27,19 +27,28 @@ class Snipes(commands.Cog):
     async def maintenance(self):
         await self.bot.wait_until_ready()
 
-        if Database.DATABASE == Database.DEV_DATABASE:
-            channel = self.bot.get_channel(self.test_channel)
-        else:
-            channel = self.bot.get_channel(self.snipe_channel)
         guild = self.bot.get_guild(self.indies_guild)
 
+        snipe_channel = self.bot.get_channel(self.snipe_channel)
+        test_channel = self.bot.get_channel(self.test_channel)
+
         while not self.bot.is_closed():
+            if Database.DATABASE == Database.DEV_DATABASE:
+                channel = test_channel
+            else:
+                channel = snipe_channel
+
             respawns = Database.getAllRespawns()
             Database.removeExpiredRevenges()
+            explosions = Database.check_exploded_potatoes()
 
-            # TODO Send message to channel
+            explosions = [guild.get_member(user).display_name for user in explosions]
+
+            if len(explosions) > 0:
+                await channel.send('```BOOM! One or more potatoes exploded and the following players lost a life and 3 points: {}```'.format(', '.join(explosions)))
+
             if Database.remove_expired_carepackage():
-                print('Expired')
+                await channel.send('```A carepackage has expired without anyone claiming it. Better luck next time.```')
 
             if len(respawns) > 0:
                 users = []
@@ -47,6 +56,7 @@ class Snipes(commands.Cog):
                     users.append(guild.get_member(int(user)).nick)
 
                 await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
+
             await asyncio.sleep(60)
 
     # Returns a user's points or snipes
@@ -244,7 +254,7 @@ class Snipes(commands.Cog):
         output.immune = immune
         output.respawns = respawns
         output.errors = errors
-        output.author = ctx.author
+        output.author = sniper
         output.hasPotato = hasPotato
         output.leaderHit = leaderHit
         output.revengeHit = revengeHit
