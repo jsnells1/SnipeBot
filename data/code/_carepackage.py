@@ -130,7 +130,7 @@ def set_user_immunity(userId, expiration):
                 'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
 
             conn.execute(
-                'UPDATE SnipingMods SET ImmunExpiration = ? WHERE UserID = ?', (expiration.timestamp(), userId,))
+                'UPDATE SnipingMods SET Immunity = ? WHERE UserID = ?', (expiration, userId,))
 
             conn.commit()
 
@@ -190,6 +190,39 @@ def has_potato(userId):
         return False
 
 
+def has_smoke_bomb(userId):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            hasPotato = conn.execute(
+                'SELECT * FROM SnipingMods WHERE UserID = ? AND SmokeBomb = 1', (userId,)).fetchone()
+
+            if hasPotato is None:
+                return False
+
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def use_smoke_bomb(userId):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            conn.execute(
+                'UPDATE SnipingMods SET SmokeBomb = 0 WHERE UserID = ?', (userId,))
+
+            conn.commit()
+
+        expiration = datetime.now() + timedelta(hours=3)
+
+        return set_user_immunity(userId, expiration.timestamp())
+
+    except Exception as e:
+        print(e)
+        return False
+
+
 def pass_potato(sender, receiver):
     try:
         with sqlite3.connect(code.DATABASE) as conn:
@@ -225,6 +258,41 @@ def check_exploded_potatoes():
                 'DELETE FROM HotPotato WHERE Explosion < ?', (now,))
 
             conn.commit()
+
+            return rows
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def get_expired_immunes():
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            now = datetime.now().timestamp()
+
+            rows = conn.execute(
+                'SELECT UserID FROM SnipingMods WHERE Immunity < ?', (now,)).fetchall()
+
+            rows = [row[0] for row in rows]
+
+            conn.execute(
+                'UPDATE SnipingMods SET Immunity = ? WHERE Immunity < ?', (None, now, ))
+
+            conn.commit()
+
+            return rows
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def get_rewards():
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            rows = conn.execute(
+                'SELECT Name, Description FROM CarePackageRwds').fetchall()
 
             return rows
 

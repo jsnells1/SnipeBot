@@ -41,10 +41,18 @@ class Snipes(commands.Cog):
             respawns = Database.getAllRespawns()
             Database.removeExpiredRevenges()
             explosions = Database.check_exploded_potatoes()
+            expirations = Database.get_expired_immunes()
 
-            explosions = [guild.get_member(user).display_name for user in explosions]
+            expirations = [guild.get_member(
+                user).display_name for user in expirations]
 
-            if len(explosions) > 0:
+            if expirations and len(expirations) > 0:
+                await channel.send('```It\'s hunting season! Immunity has expired for: {}```'.format(', '.join(expirations)))
+
+            explosions = [guild.get_member(
+                user).display_name for user in explosions]
+
+            if explosions and len(explosions) > 0:
                 await channel.send('```BOOM! One or more potatoes exploded and the following players lost a life and 3 points: {}```'.format(', '.join(explosions)))
 
             if Database.remove_expired_carepackage():
@@ -154,10 +162,12 @@ class Snipes(commands.Cog):
             else:
                 errors.append(loser.display_name)
 
-        totalPoints = bonusPoints * multiplier + \
+        bonusPoints = bonusPoints * multiplier + \
             (len(hits) * multiplier - len(hits))
 
-        Database.addPoints(ctx.author.id, totalPoints)
+        Database.addPoints(ctx.author.id, bonusPoints)
+
+        totalPoints = bonusPoints + len(hits)
 
         output = SnipingFormatter()
         output.hits = hits
@@ -200,13 +210,13 @@ class Snipes(commands.Cog):
         respawns = []
         errors = []
         leaderId = Database.getLeader()
-        revengeId = Database.getRevengeUser(ctx.author.id)
+        revengeId = Database.getRevengeUser(sniper.id)
         bonusPoints = 0
         leaderHit = False
         revengeHit = False
-        hasPotato = Database.has_potato(ctx.author.id)
+        hasPotato = Database.has_potato(sniper.id)
 
-        multiplier = Database.get_multiplier(ctx.author.id)
+        multiplier = Database.get_multiplier(sniper.id)
 
         if multiplier is None or not multiplier:
             multiplier = 1
@@ -229,7 +239,7 @@ class Snipes(commands.Cog):
 
             if Database.addSnipe(sniper.id, loser.id):
                 if i == 0 and hasPotato:
-                    Database.pass_potato(ctx.author.id, loser.id)
+                    Database.pass_potato(sniper.id, loser.id)
 
                 if loser.id == leaderId:
                     leaderHit = True
@@ -244,10 +254,12 @@ class Snipes(commands.Cog):
             else:
                 errors.append(loser.nick)
 
-        totalPoints = bonusPoints * multiplier + \
+        bonusPoints = bonusPoints * multiplier + \
             (len(hits) * multiplier - len(hits))
 
-        Database.addPoints(sniper.id, totalPoints)
+        Database.addPoints(sniper.id, bonusPoints)
+
+        totalPoints = bonusPoints + len(hits)
 
         output = SnipingFormatter()
         output.hits = hits
@@ -326,8 +338,14 @@ class Snipes(commands.Cog):
 
     # region CarePackage Commands
     @commands.command(name='smoke_bomb', hidden=True)
-    async def use_smoke_bomb(self, ctx: commands.Context, keyword, time, hint):
-        await ctx.send(CarePackage.set_carepackage(keyword, time, hint))
+    async def use_smoke_bomb(self, ctx: commands.Context):
+        if Database.has_smoke_bomb(ctx.author.id):
+            if Database.use_smoke_bomb(ctx.author.id):
+                await ctx.send(ctx.author.display_name + ' has used a smoke bomb and is now immune for the next 3 hours!')
+            else:
+                await ctx.send('Error using smoke bomb.')
+        else:
+            await ctx.send('You don\'t have a smoke bomb to use!')
 
     @commands.command(name='set_carepackage', hidden=True)
     # @commands.has_role(item="Dev Team")
@@ -339,10 +357,22 @@ class Snipes(commands.Cog):
     async def get_carepackage_hint(self, ctx: commands.Context):
         await ctx.send(CarePackage.get_hint())
 
+    @commands.command(name='get_rewards', hidden=True)
+    # @commands.has_role(item="Dev Team")
+    async def get_carepackage_rewards(self, ctx: commands.Context):
+        rewards = Database.get_rewards()
+
+        sendingStr = ''
+
+        for reward in rewards:
+            sendingStr += reward[0] + '\n\t\u2192 ' + reward[1] + '\n'
+
+        await ctx.send('```' + sendingStr + '```')
+
     @commands.command(name='announce_carepackage', hidden=True)
     # @commands.has_role(item="Dev Team")
     async def announce_carepackage(self, ctx: commands.Context):
-        channel = ctx.guild.get_channel(566052230256656415)
+        channel = ctx.guild.get_channel(self.test_channel)
         await channel.send('{} A carepackage is spawning soon!'.format(ctx.guild.default_role))
 
     @commands.command(name='guess', hidden=True)

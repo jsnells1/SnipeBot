@@ -54,13 +54,14 @@ class SnipingFormatter:
                 self.joinListWithAnd(self.errors))
 
         returnStr += '\n```Kill Summary:\n\n'
-        returnStr += 'Kills:                {}\n'.format(len(self.hits))
+        returnStr += 'Kills:                  {}\n'.format(len(self.hits))
         if self.leaderHit:
-            returnStr += 'Leader Kill Points:   3\n'
+            returnStr += 'Leader Kill Points:     3\n'
         if self.revengeHit:
-            returnStr += 'Revenge Kill Points:  2\n'
-        returnStr += 'Multiplier:          x{}\n'.format(self.multiplier)
-        returnStr += 'Total Points:         {}```'.format(
-            self.totalPoints + len(self.hits))
+            returnStr += 'Revenge Kill Points:    2\n'
+        returnStr += 'Pre-Multiplier Total:   {}\n'.format(
+            int(self.totalPoints / self.multiplier))
+        returnStr += 'Multiplier:            x{}\n'.format(self.multiplier)
+        returnStr += 'Total Points:          {:>2}```'.format(self.totalPoints)
 
         return returnStr

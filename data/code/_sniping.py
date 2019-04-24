@@ -318,8 +318,6 @@ def isImmune(userId):
 
             now = datetime.now().timestamp()
 
-            conn.execute(
-                'UPDATE SnipingMods SET Immunity = ? WHERE UserID = ? and Immunity < ?', (None, userId, now))
             immune = conn.execute(
                 'SELECT Immunity FROM SnipingMods WHERE UserID = ? and Immunity > ?', (userId, now)).fetchone()
 
@@ -343,7 +341,7 @@ def get_multiplier(userId):
             conn.execute(
                 'UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE MultiExpiration < ?', (None, None, now))
             multi = conn.execute(
-                'SELECT Multiplier FROM SnipingMods WHERE UserID = ? MultiExpiration > ?', (userId, now)).fetchone()
+                'SELECT Multiplier FROM SnipingMods WHERE UserID = ? AND MultiExpiration > ?', (userId, now)).fetchone()
 
             conn.commit()
 
