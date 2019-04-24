@@ -112,7 +112,7 @@ class Snipes(commands.Cog):
             await ctx.send('Sorry, you cannot snipe yourself...')
             return
 
-        await ctx.send(self.do_snipe(ctx.author, losers))
+        await ctx.send(self.do_snipe(ctx.author, losers)
 
     @snipeUser.error
     async def sniperUser_error(self, ctx, error):
