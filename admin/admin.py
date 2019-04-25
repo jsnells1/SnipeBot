@@ -88,7 +88,7 @@ class AdminCommands(commands.Cog):
         await ctx.send(msg)
 
     @commands.command(name='switchDB', hidden=True)
-    @commands.has_permissions(ban_members=True)
+    @commands.has_role(item="Dev Team")
     async def switchDB(self, ctx: commands.Context, env=None):
 
         if env is None:
