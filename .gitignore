@@ -106,3 +106,6 @@ venv.bak/
 # Config (contains token)
 config.ini
 config.cfg
+
+# log files
+**/log/

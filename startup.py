@@ -1,6 +1,9 @@
 import argparse
 import configparser
 import sys
+import os
+import logging
+import logging.handlers
 from datetime import datetime, timedelta
 
 import discord
@@ -12,6 +15,20 @@ from soapbox.soapbox import Soapbox
 
 from data import code
 from data.code import Environment
+
+if not os.path.exists('./log'):
+    try:
+        os.makedirs('./log')
+    except:
+        sys.exit('Log directory does not exist and cannot be created')
+
+
+logger = logging.getLogger()
+handler = logging.handlers.RotatingFileHandler(
+    filename='./log/snipebot.log', encoding='utf-8', maxBytes=10485760, backupCount=5)
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
 # Read and Verify config
 
@@ -36,6 +53,18 @@ except:
 TOKEN = str(config['TOKEN']['Token'])
 BOT_PREFIX = "!"
 
+# Setup
+parser = argparse.ArgumentParser()
+parser.add_argument('-env')
+args = parser.parse_args()
+
+if args.env is not None:
+    if args.env == 'dev':
+        code.switchDatabase(Environment.dev)
+    elif args.env == 'live':
+        code.switchDatabase(Environment.live)
+
+
 bot = commands.Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
                    activity=discord.Activity(type=discord.ActivityType.listening, name='Logan\'s SI Session'))
 
@@ -58,17 +87,6 @@ async def kill_error(ctx: commands.Context, error):
 async def on_ready():
     print('Ready. Database: ' + code.DATABASE)
 
-
-# Setup
-parser = argparse.ArgumentParser()
-parser.add_argument('-env')
-args = parser.parse_args()
-
-if args.env is not None:
-    if args.env == 'dev':
-        code.switchDatabase(Environment.dev)
-    elif args.env == 'live':
-        code.switchDatabase(Environment.live)
 
 bot.add_cog(Soapbox(bot))
 bot.add_cog(Snipes(bot, day, start, end))

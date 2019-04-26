@@ -1,6 +1,7 @@
+from datetime import datetime
+
 import discord
 import discord.ext.commands as commands
-from datetime import datetime
 
 from data import code as Database
 from data.code import Environment

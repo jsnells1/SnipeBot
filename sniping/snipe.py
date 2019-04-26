@@ -1,16 +1,16 @@
-import calendar
 import asyncio
+import calendar
+import logging
 from datetime import datetime
 
 import discord
 import discord.ext.commands as commands
 
+import sniping.carepackage as CarePackage
 from data import code as Database
 from data.code import Environment
 
-import sniping.carepackage as CarePackage
 from .formatting import SnipingFormatter
-
 
 class Snipes(commands.Cog):
     def __init__(self, bot, day, start, end):
