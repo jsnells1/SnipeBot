@@ -16,5 +16,8 @@ A discord bot to manage 'Snipes' in the SU Indies club discord. Hopefully to be 
  
 ## Setting up environment
 
-* First clone the repository
-* In the root folder, run pip install -r requeriments.txt
+* First fork and clone the repository
+* In the root folder, run:
+~~~
+pip install -r requirements.txt
+~~~
