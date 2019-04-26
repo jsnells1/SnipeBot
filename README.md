@@ -14,3 +14,7 @@ A discord bot to manage 'Snipes' in the SU Indies club discord. Hopefully to be 
 * [discord.py](https://github.com/Rapptz/discord.py)
   * Install via command-line via pip install discord.py
  
+## Setting up environment
+
+* First clone the repository
+* In the root folder, run pip install -r requeriments.txt
