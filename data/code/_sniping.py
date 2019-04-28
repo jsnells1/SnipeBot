@@ -352,3 +352,32 @@ def get_multiplier(userId):
 
     except:
         return False
+
+
+def update_killstreak(userId, kills):
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            now = datetime.now()
+
+            conn.execute(
+                'UPDATE Scores SET Killstreak = ?, KillstreakTime = ? WHERE KillstreakTime < ?', (0, None, now.timestamp()))
+
+            timer = now + timedelta(hours=1)
+
+            conn.execute(
+                'UPDATE Scores SET Killstreak = Killstreak + ?, KillstreakTime = ? WHERE UserID = ?', (kills, timer.timestamp(), userId))
+
+            conn.commit()
+
+            killstreak = conn.execute(
+                'SELECT Killstreak FROM Scores WHERE UserID = ?', (userId,)).fetchone()
+
+            if killstreak is None:
+                return 0
+
+            return int(killstreak[0])
+
+    except Exception as e:
+        print(e)
+        return False

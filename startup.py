@@ -1,46 +1,51 @@
 import argparse
 import configparser
-import sys
-import os
 import logging
 import logging.handlers
+import os
+import sys
 from datetime import datetime, timedelta
 
 import discord
 import discord.ext.commands as commands
 
-from sniping.snipe import Snipes
 from admin.admin import AdminCommands
-from soapbox.soapbox import Soapbox
-
 from data import code
 from data.code import Environment
+from sniping.snipe import Snipes
+from soapbox.soapbox import Soapbox
 
-if not os.path.exists('./log'):
-    try:
-        os.makedirs('./log')
-    except:
-        sys.exit('Log directory does not exist and cannot be created')
-
-
-logger = logging.getLogger()
+# Create logger
+logging.getLogger('discord').setLevel(logging.WARNING)
+log = logging.getLogger()
+log.setLevel(level=logging.INFO)
 handler = logging.handlers.RotatingFileHandler(
     filename='./log/snipebot.log', encoding='utf-8', maxBytes=10485760, backupCount=5)
 handler.setFormatter(logging.Formatter(
     '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-logger.addHandler(handler)
+log.addHandler(handler)
+
+# Create log directory if it doesn't exist
+if not os.path.exists('./log'):
+    try:
+        os.makedirs('./log')
+    except:
+        log.fatal('Log directory does not exist and cannot be created')
+        sys.exit('Log directory does not exist and cannot be created')
+
 
 # Read and Verify config
-
 config = configparser.ConfigParser()
 config.sections()
 
 config.read('config.cfg')
 
 if 'TOKEN' not in config or 'Token' not in config['TOKEN']:
+    log.fatal('Token not found in config file')
     sys.exit('Token not found in config file')
 
 if 'SnipingExceptions' not in config:
+    log.fatal('SnipingExceptions not found in config file')
     sys.exit('SnipingExceptions section not found in config file')
 
 try:
@@ -48,6 +53,7 @@ try:
     start = int(config['SnipingExceptions']['ClubTimeStart'])
     end = int(config['SnipingExceptions']['ClubTimeStop'])
 except:
+    log.fatal('Could not resolve club day, start, and/or stop in config')
     sys.exit('Cannot resolve club day, start, and stop in config')
 
 TOKEN = str(config['TOKEN']['Token'])
@@ -75,16 +81,9 @@ async def kill(ctx: commands.Context):
     await bot.logout()
 
 
-@kill.error
-async def kill_error(ctx: commands.Context, error):
-    if isinstance(error, commands.MissingPermissions):
-        text = "Sorry {}, you do not have permissions to do that!".format(
-            ctx.message.author.mention)
-        await ctx.send(text)
-
-
 @bot.event
 async def on_ready():
+    log.info('Bot started: Database: ' + code.DATABASE)
     print('Ready. Database: ' + code.DATABASE)
 
 

@@ -12,6 +12,7 @@ from data.code import Environment
 
 from .formatting import SnipingFormatter
 
+
 class Snipes(commands.Cog):
     def __init__(self, bot, day, start, end):
         self.bot = bot
@@ -175,6 +176,10 @@ class Snipes(commands.Cog):
             else:
                 errors.append(loser.nick)
 
+        if len(hits) > 0:
+            killstreak = Database.update_killstreak(sniper.id, len(hits))
+            print('Killstreak: ' + str(killstreak))
+
         bonusPoints = bonusPoints * multiplier + \
             (len(hits) * multiplier - len(hits))
 
@@ -283,17 +288,17 @@ class Snipes(commands.Cog):
             await ctx.send('You don\'t have a smoke bomb to use!')
 
     @commands.command(name='set_carepackage', hidden=True)
-    # @commands.has_role(item="Dev Team")
+    @commands.has_role(item="Dev Team")
     async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint):
         await ctx.send(CarePackage.set_carepackage(keyword, time, hint))
 
     @commands.command(name='get_hint', hidden=True)
-    # @commands.has_role(item="Dev Team")
+    @commands.has_role(item="Dev Team")
     async def get_carepackage_hint(self, ctx: commands.Context):
         await ctx.send(CarePackage.get_hint())
 
     @commands.command(name='get_rewards', hidden=True)
-    # @commands.has_role(item="Dev Team")
+    @commands.has_role(item="Dev Team")
     async def get_carepackage_rewards(self, ctx: commands.Context):
         rewards = Database.get_rewards()
 
@@ -305,13 +310,13 @@ class Snipes(commands.Cog):
         await ctx.send('```' + sendingStr + '```')
 
     @commands.command(name='announce_carepackage', hidden=True)
-    # @commands.has_role(item="Dev Team")
+    @commands.has_role(item="Dev Team")
     async def announce_carepackage(self, ctx: commands.Context):
         channel = ctx.guild.get_channel(self.test_channel)
         await channel.send('{} A carepackage is spawning soon!'.format(ctx.guild.default_role))
 
     @commands.command(name='guess', hidden=True)
-    # @commands.has_role(item="Dev Team")
+    @commands.has_role(item="Dev Team")
     async def guess_keyword(self, ctx: commands.Context, keyword):
         success, msg = CarePackage.isKeyword(keyword)
 
