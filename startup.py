@@ -15,6 +15,14 @@ from data.code import Environment
 from sniping.snipe import Snipes
 from soapbox.soapbox import Soapbox
 
+
+# Create log directory if it doesn't exist
+if not os.path.exists('./log'):
+    try:
+        os.makedirs('./log')
+    except:
+        sys.exit('Log directory does not exist and cannot be created')
+
 # Create logger
 logging.getLogger('discord').setLevel(logging.WARNING)
 log = logging.getLogger()
@@ -24,15 +32,6 @@ handler = logging.handlers.RotatingFileHandler(
 handler.setFormatter(logging.Formatter(
     '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 log.addHandler(handler)
-
-# Create log directory if it doesn't exist
-if not os.path.exists('./log'):
-    try:
-        os.makedirs('./log')
-    except:
-        log.fatal('Log directory does not exist and cannot be created')
-        sys.exit('Log directory does not exist and cannot be created')
-
 
 # Read and Verify config
 config = configparser.ConfigParser()
