@@ -176,9 +176,9 @@ class Snipes(commands.Cog):
             else:
                 errors.append(loser.nick)
 
+        killstreak = len(hits)
         if len(hits) > 0:
             killstreak = Database.update_killstreak(sniper.id, len(hits))
-            print('Killstreak: ' + str(killstreak))
 
         bonusPoints = bonusPoints * multiplier + \
             (len(hits) * multiplier - len(hits))
@@ -197,6 +197,7 @@ class Snipes(commands.Cog):
         output.leaderHit = leaderHit
         output.revengeHit = revengeHit
         output.potatoName = targets[0].display_name
+        output.killstreak = killstreak
 
         guild = self.bot.get_guild(self.indies_guild)
 
@@ -223,9 +224,13 @@ class Snipes(commands.Cog):
     @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
         rows = Database.getLeaderboard()
-        if not rows:
+        killstreakHiScore = Database.get_highest_killstreak()
+
+        if not rows or not killstreakHiScore:
             await ctx.send('```Error retrieving leaderboard```')
             return
+
+        killstreakHolder = ctx.guild.get_member(killstreakHiScore[0])
 
         _padding = 3
         _paddingString = ' ' * _padding
@@ -233,6 +238,7 @@ class Snipes(commands.Cog):
         _pointsColName = 'P'
         _snipesColName = 'S'
         _deathsColName = 'D'
+        output = ''
 
         nameColLength = len(_userColName)
         pointsColLength = len(_pointsColName)
@@ -249,7 +255,13 @@ class Snipes(commands.Cog):
             snipeColLength = max(snipeColLength, len(str(row[2])))
             deathColLength = max(deathColLength, len(str(row[3])))
 
-        output = _userColName + _paddingString + \
+        output += 'HiScores \n'
+        output += '-' * (_padding * 3 + nameColLength +
+                         pointsColLength + snipeColLength + deathColLength) + '\n'
+        output += 'Longest Streak: {} - {}\n\n'.format(
+            killstreakHiScore[1], killstreakHolder.display_name[0:10])
+
+        output += _userColName + _paddingString + \
             ((nameColLength - len(_userColName)) * ' ')
         output += _pointsColName + _paddingString + \
             ((pointsColLength - len(_pointsColName)) * ' ')

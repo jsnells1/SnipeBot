@@ -107,6 +107,7 @@ class AdminCommands(commands.Cog):
 
         if response:
             await ctx.send('Database successfully changed.')
+            print('Database: ' + Database.DATABASE)
         else:
             await ctx.send('Error changing database.')
 

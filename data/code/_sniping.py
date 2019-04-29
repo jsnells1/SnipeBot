@@ -192,7 +192,7 @@ def addSnipe(winner, loser):
             c.execute(
                 'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1 WHERE UserID = {}'.format(winner))
             c.execute(
-                'UPDATE Scores SET Deaths = Deaths + 1 WHERE UserID = {}'.format(loser))
+                'UPDATE Scores SET Deaths = Deaths + 1, Killstreak = 0 WHERE UserID = {}'.format(loser))
 
             c.execute(
                 'UPDATE Scores SET Respawn = NULL WHERE UserID = {}'.format(winner))
@@ -358,15 +358,8 @@ def update_killstreak(userId, kills):
     try:
         with sqlite3.connect(code.DATABASE) as conn:
 
-            now = datetime.now()
-
             conn.execute(
-                'UPDATE Scores SET Killstreak = ?, KillstreakTime = ? WHERE KillstreakTime < ?', (0, None, now.timestamp()))
-
-            timer = now + timedelta(hours=1)
-
-            conn.execute(
-                'UPDATE Scores SET Killstreak = Killstreak + ?, KillstreakTime = ? WHERE UserID = ?', (kills, timer.timestamp(), userId))
+                'UPDATE Scores SET Killstreak = Killstreak + ?, KillstreakRecord = MAX(KillstreakRecord, Killstreak + ?) WHERE UserID = ?', (kills, kills, userId))
 
             conn.commit()
 
@@ -377,6 +370,23 @@ def update_killstreak(userId, kills):
                 return 0
 
             return int(killstreak[0])
+
+    except Exception as e:
+        print(e)
+        return False
+
+
+def get_highest_killstreak():
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+
+            killstreak = conn.execute(
+                'SELECT UserID, KillstreakRecord FROM Scores ORDER BY KillstreakRecord DESC LIMIT 1').fetchone()
+
+            if killstreak is None:
+                return None
+
+            return killstreak
 
     except Exception as e:
         print(e)

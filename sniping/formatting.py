@@ -13,6 +13,7 @@ class SnipingFormatter:
         self.revengeMember = None
         self.totalPoints = None
         self.multiplier = None
+        self.killstreak = None
 
     def joinListWithAnd(self, data):
         if len(data) == 0:
@@ -29,6 +30,10 @@ class SnipingFormatter:
         if len(self.hits) > 0:
             returnStr += 'SNIPED! {} has sniped {}!\n'.format(
                 self.author.display_name, self.joinListWithAnd(self.hits))
+
+        if self.killstreak > 1:
+            returnStr += 'You are on a killstreak of {}!\n'.format(
+                self.killstreak)
 
         if self.hasPotato:
             returnStr += '{} has passed the potato to {}! Get rid of it before it explodes!!!\n'.format(
