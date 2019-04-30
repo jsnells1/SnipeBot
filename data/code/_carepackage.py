@@ -55,7 +55,7 @@ def reset_carepackage():
 def set_user_multiplier(userId, multiplier):
     expiration = datetime.now() + timedelta(hours=24)
 
-    commands = [('INSERT or IGNORE INTO SnipingMods (UserID) VALUES ?', (userId,)),
+    commands = [('INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,)),
                 ('UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE UserID = ?', (multiplier, expiration.timestamp(), userId,))]
 
     return _executeStmt_noReturn(commands)
@@ -63,7 +63,7 @@ def set_user_multiplier(userId, multiplier):
 
 def set_user_immunity(userId, expiration):
 
-    commands = [('INSERT or IGNORE INTO SnipingMods (UserID) VALUES ?', (userId,)),
+    commands = [('INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,)),
                 ('UPDATE SnipingMods SET Immunity = ? WHERE UserID = ?', (expiration, userId,))]
 
     return _executeStmt_noReturn(commands)

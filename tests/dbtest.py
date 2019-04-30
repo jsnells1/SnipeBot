@@ -18,9 +18,5 @@ class DatabaseTests(unittest.TestCase):
             self.fail('Database failed to switch to Dev')
 
     def test_addPoints(self):
-        self.assertTrue(Database.addPoints(self.dbflag, 1))
-        self.assertTrue(Database.addPoints(self.dbflag, -1))
-
-    def test_registerUser(self):
-        self.assertFalse(Database.registerUser(None))
-        self.assertFalse(Database.registerUser(self.ownerId))
+        self.assertTrue(Database.addPoints(self.ownerId, 1))
+        self.assertTrue(Database.addPoints(self.ownerId, -1))

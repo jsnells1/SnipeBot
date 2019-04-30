@@ -39,8 +39,8 @@ def _executeStmt_noReturn(cmds):
 
 
 def registerUser(userId):
-    commands = [('INSERT INTO Scores (UserID) VALUES ?', (userId,)),
-                ('INSERT INTO SnipingMods (UserID) VALUES ?', (userId,))]
+    commands = [('INSERT or IGNORE INTO Scores (UserID) VALUES (?)', (userId,)),
+                ('INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))]
 
     response = _executeStmt_noReturn(commands)
 
@@ -246,8 +246,11 @@ def addSnipe(winner, loser):
             c.execute(
                 'UPDATE Scores SET Revenge = {}, RevengeTime = {} WHERE UserID = {}'.format(winner, date.timestamp(), loser))
 
-            if not setRespawn(loser, conn):
-                return False
+            RESPAWN_TIME = 2
+
+            date = datetime.now() + timedelta(hours=RESPAWN_TIME)
+            c.execute('UPDATE Scores SET Respawn = ? WHERE UserID = ?',
+                      (date.timestamp(), loser))
 
             conn.commit()
 
