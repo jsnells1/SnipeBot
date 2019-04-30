@@ -306,7 +306,6 @@ class Snipes(commands.Cog):
         await ctx.send(CarePackage.set_carepackage(keyword, time, hint))
 
     @commands.command(name='get_hint', hidden=True)
-    @commands.has_role(item="Dev Team")
     async def get_carepackage_hint(self, ctx: commands.Context):
         await ctx.send(CarePackage.get_hint())
 
@@ -325,12 +324,15 @@ class Snipes(commands.Cog):
     @commands.command(name='announce_carepackage', hidden=True)
     @commands.has_role(item="Dev Team")
     async def announce_carepackage(self, ctx: commands.Context):
-        channel = ctx.guild.get_channel(self.test_channel)
+        channel = ctx.guild.get_channel(self.snipe_channel)
         await channel.send('{} A carepackage is spawning soon!'.format(ctx.guild.default_role))
 
     @commands.command(name='guess', hidden=True)
-    @commands.has_role(item="Dev Team")
     async def guess_keyword(self, ctx: commands.Context, keyword):
+        if Database.isRespawning(ctx.author.id):
+            await ctx.send('Sorry, you can\'t claim the carepackage if you\'re dead!')
+            return
+
         success, msg = CarePackage.isKeyword(keyword)
 
         if not success:

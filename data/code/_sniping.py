@@ -100,6 +100,30 @@ def addPoints(userId, points):
 
     return _executeStmt_noReturn(commands)
 
+
+def setSnipes(userId, amt):
+
+    commands = [
+        ('UPDATE Scores SET Snipes = ? WHERE UserID = ?', (amt, userId))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def setPoints(userId, amt):
+
+    commands = [
+        ('UPDATE Scores SET Points = ? WHERE UserID = ?', (amt, userId))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def setDeaths(userId, amt):
+
+    commands = [
+        ('UPDATE Scores SET Deaths = ? WHERE UserID = ?', (amt, userId))]
+
+    return _executeStmt_noReturn(commands)
+
 # endregion Inserting and Updating
 
 
@@ -140,6 +164,18 @@ def isRespawning(userID):
                     return datetime.now() < respawn
 
             return False
+    except Exception as e:
+        print(e)
+        return False
+
+
+def getAllUsers():
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            row = conn.execute(
+                'SELECT UserID FROM Scores').fetchall()
+
+            return row
     except Exception as e:
         print(e)
         return False
@@ -250,67 +286,14 @@ def getLeader():
         return False
 
 
-def setSnipes(userId, amt):
-    try:
-        conn = sqlite3.connect(code.DATABASE)
-        c = conn.cursor()
-
-        c.execute(
-            'UPDATE Scores SET Snipes = {} WHERE UserID = {}'.format(amt, userId))
-        conn.commit()
-
-        return True
-
-    except:
-        return False
-
-    finally:
-        conn.close()
-
-
-def setPoints(userId, amt):
-    try:
-        conn = sqlite3.connect(code.DATABASE)
-        c = conn.cursor()
-
-        c.execute(
-            'UPDATE Scores SET Points = {} WHERE UserID = {}'.format(amt, userId))
-        conn.commit()
-
-        return True
-
-    except:
-        return False
-
-    finally:
-        conn.close()
-
-
-def setDeaths(userId, amt):
-    try:
-        conn = sqlite3.connect(code.DATABASE)
-        c = conn.cursor()
-
-        c.execute(
-            'UPDATE Scores SET Deaths = {} WHERE UserID = {}'.format(amt, userId))
-        conn.commit()
-
-        return True
-
-    except:
-        return False
-
-    finally:
-        conn.close()
-
-
 def update_scores_names(members):
     try:
+        params = [(member.display_name, member.id) for member in members]
+
         with sqlite3.connect(code.DATABASE) as conn:
 
-            for member in members:
-                conn.execute('UPDATE Scores SET Name = ? WHERE UserID = ?',
-                             (member.display_name, member.id))
+            conn.executemany('UPDATE Scores SET Name = ? WHERE UserID = ?',
+                             params)
 
             conn.commit()
 

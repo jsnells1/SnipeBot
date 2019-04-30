@@ -178,3 +178,14 @@ class AdminCommands(commands.Cog):
             await ctx.send('```Usernames updated.```')
         else:
             await ctx.send('```Usernames failed to be updated.```')
+
+
+    @commands.command(name='assign_sniper_role')
+    @commands.has_role(item='Dev Team')
+    async def assign_sniper_role(self, ctx: commands.Context):
+        userIds = Database.getAllUsers()
+        role = discord.utils.get(ctx.guild.roles, name='Sniper Team')
+
+        for userId in userIds:
+            member = ctx.guild.get_member(userId[0])
+            await member.add_roles(role)

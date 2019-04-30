@@ -1,23 +1,81 @@
+import logging
 import sqlite3
-
 from datetime import datetime, timedelta
 
 from data import code
 
+log = logging.getLogger(__name__)
 
-def set_carepackage(keyword, expiration, hint):
+
+def _executeStmt_noReturn(cmds):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        # Input validation
+        for cmd in cmds:
+            if not isinstance(cmd, tuple) or len(cmd) != 2:
+                raise ValueError('cmds must be a list of tuples of size 2')
 
-            conn.execute(
-                'UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (keyword, expiration, hint,))
+            if not isinstance(cmd[0], str) or not isinstance(cmd[1], tuple):
+                raise ValueError(
+                    'Each command must be a tuple of size 2 with the string command and the parameter tuple')
+
+        with sqlite3.connect(code.DATABASE) as conn:
+            for cmd in cmds:
+                stmt = cmd[0]
+                params = cmd[1]
+
+                conn.execute(stmt, params)
+
             conn.commit()
 
         return True
 
     except Exception as e:
-        print(e)
+        log.critical('Error executing statement(s): %s', cmds, exc_info=e)
         return False
+
+
+# region Inserting and Updating
+
+
+def set_carepackage(keyword, expiration, hint):
+
+    commands = [('UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?',
+                 (keyword, expiration, hint,))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def reset_carepackage():
+    commands = [
+        ('UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (None, None, None,))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def set_user_multiplier(userId, multiplier):
+    expiration = datetime.now() + timedelta(hours=24)
+
+    commands = [('INSERT or IGNORE INTO SnipingMods (UserID) VALUES ?', (userId,)),
+                ('UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE UserID = ?', (multiplier, expiration.timestamp(), userId,))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def set_user_immunity(userId, expiration):
+
+    commands = [('INSERT or IGNORE INTO SnipingMods (UserID) VALUES ?', (userId,)),
+                ('UPDATE SnipingMods SET Immunity = ? WHERE UserID = ?', (expiration, userId,))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def pass_potato(sender, receiver):
+    commands = [
+        ('UPDATE HotPotato SET Owner = ? WHERE Owner = ?', (receiver, sender,))]
+
+    return _executeStmt_noReturn(commands)
+    
+# endregion Inserting and Updating
 
 
 def get_carepackage_hint():
@@ -80,61 +138,6 @@ def get_random_reward():
                 'SELECT id, Name FROM CarePackageRwds ORDER BY RANDOM() LIMIT 1').fetchone()
 
             return row
-
-    except Exception as e:
-        print(e)
-        return False
-
-
-def reset_carepackage():
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-
-            conn.execute(
-                'UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (None, None, None,))
-
-            conn.commit()
-
-        return True
-
-    except Exception as e:
-        print(e)
-        return False
-
-
-def set_user_multiplier(userId, multiplier):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-
-            expiration = datetime.now() + timedelta(hours=24)
-
-            conn.execute(
-                'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
-
-            conn.execute(
-                'UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE UserID = ?', (multiplier, expiration.timestamp(), userId,))
-
-            conn.commit()
-
-        return True
-
-    except Exception as e:
-        print(e)
-        return False
-
-
-def set_user_immunity(userId, expiration):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-            conn.execute(
-                'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
-
-            conn.execute(
-                'UPDATE SnipingMods SET Immunity = ? WHERE UserID = ?', (expiration, userId,))
-
-            conn.commit()
-
-        return True
 
     except Exception as e:
         print(e)
@@ -217,21 +220,6 @@ def use_smoke_bomb(userId):
         expiration = datetime.now() + timedelta(hours=3)
 
         return set_user_immunity(userId, expiration.timestamp())
-
-    except Exception as e:
-        print(e)
-        return False
-
-
-def pass_potato(sender, receiver):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-            conn.execute(
-                'UPDATE HotPotato SET Owner = ? WHERE Owner = ?', (receiver, sender,))
-
-            conn.commit()
-
-        return True
 
     except Exception as e:
         print(e)
