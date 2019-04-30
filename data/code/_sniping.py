@@ -1,9 +1,106 @@
+import logging
 import sqlite3
 from datetime import datetime, timedelta
 
 import discord
 
 from data import code
+
+log = logging.getLogger(__name__)
+
+
+def _executeStmt_noReturn(cmds):
+    try:
+        # Input validation
+        for cmd in cmds:
+            if not isinstance(cmd, tuple) or len(cmd) != 2:
+                raise ValueError('cmds must be a list of tuples of size 2')
+
+            if not isinstance(cmd[0], str) or not isinstance(cmd[1], tuple):
+                raise ValueError(
+                    'Each command must be a tuple of size 2 with the string command and the parameter tuple')
+
+        with sqlite3.connect(code.DATABASE) as conn:
+            for cmd in cmds:
+                stmt = cmd[0]
+                params = cmd[1]
+
+                conn.execute(stmt, params)
+
+            conn.commit()
+
+        return True
+
+    except Exception as e:
+        log.critical('Error executing statement(s): %s', cmds, exc_info=e)
+        return False
+
+# region Inserting and Updating
+
+
+def registerUser(userId):
+    commands = [('INSERT INTO Scores (UserID) VALUES ?', (userId,)),
+                ('INSERT INTO SnipingMods (UserID) VALUES ?', (userId,))]
+
+    response = _executeStmt_noReturn(commands)
+
+    if response:
+        log.info('User registered with ID: %s', userId)
+
+    return response
+
+
+def removeUser(userId):
+    commands = [('DELETE FROM Scores WHERE UserID = ?', (userId,)),
+                ('DELETE FROM SnipingMods WHERE UserID = ?', (userId,))]
+
+    response = _executeStmt_noReturn(commands)
+
+    if response:
+        log.info('User deleted with ID: %s', userId)
+
+    return response
+
+
+def resetRevenge(userID):
+
+    commands = [
+        ('UPDATE Scores SET Revenge = ? WHERE UserId = ?', (None, userID,))]
+
+    response = _executeStmt_noReturn(commands)
+
+    if response:
+        log.info('Revenge reset for: %s', userID)
+
+    return response
+
+
+def removeExpiredRevenges():
+    today = datetime.now().timestamp()
+
+    commands = [
+        ('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today,))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def setRespawn(userID, conn):
+    RESPAWN_TIME = 2
+
+    date = datetime.now() + timedelta(hours=RESPAWN_TIME)
+    commands = [('UPDATE Scores SET Respawn = ? WHERE UserID = ?',
+                 (date.timestamp(), userID))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def addPoints(userId, points):
+    commands = [
+        ('UPDATE Scores SET Points = Points + ? WHERE UserID = ?', (points, userId))]
+
+    return _executeStmt_noReturn(commands)
+
+# endregion Inserting and Updating
 
 
 def getUserPoints(userId):
@@ -26,40 +123,6 @@ def getUserPoints(userId):
 
     finally:
         conn.close()
-
-
-def registerUser(userId):
-    try:
-        conn = sqlite3.connect(code.DATABASE)
-        c = conn.cursor()
-
-        c.execute(
-            'INSERT or IGNORE INTO Scores (UserID) VALUES ({})'.format(userId))
-        c.execute(
-            'INSERT or IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(userId))
-        conn.commit()
-
-        return True
-
-    except:
-        return False
-
-    finally:
-        conn.close()
-
-
-def removeUser(userId):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-            c = conn.cursor()
-
-            c.execute('DELETE FROM Scores WHERE UserID = {}'.format(userId))
-            conn.commit()
-
-        return True
-
-    except:
-        return False
 
 
 def isRespawning(userID):
@@ -97,46 +160,6 @@ def getRevengeUser(userID):
         return False
 
 
-def resetRevenge(userID):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-
-            conn.execute(
-                'UPDATE Scores SET Revenge = ? WHERE UserId = ?', (None, userID,))
-
-    except Exception as e:
-        print(e)
-        return False
-
-
-def removeExpiredRevenges():
-    try:
-        today = datetime.now().timestamp()
-        with sqlite3.connect(code.DATABASE) as conn:
-
-            conn.execute(
-                'UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today,))
-
-    except Exception as e:
-        print(e)
-        return False
-
-
-def setRespawn(userID, conn):
-    try:
-
-        respawnTime = 2
-
-        date = datetime.now() + timedelta(hours=respawnTime)
-        conn.execute('UPDATE Scores SET Respawn = {} WHERE UserID = {}'.format(
-            date.timestamp(), userID))
-
-        return True
-    except Exception as e:
-        print(e)
-        return False
-
-
 def getAllRespawns():
     try:
         with sqlite3.connect(code.DATABASE) as conn:
@@ -154,21 +177,6 @@ def getAllRespawns():
 
         return rows
     except:
-        return False
-
-
-def addPoints(userId, points):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-            conn.execute(
-                'UPDATE Scores SET Points = Points + ? WHERE UserID = ?', (points, userId))
-
-            conn.commit()
-
-        return True
-
-    except Exception as e:
-        print(e)
         return False
 
 

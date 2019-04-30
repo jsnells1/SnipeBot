@@ -85,7 +85,6 @@ async def on_ready():
     log.info('Bot started: Database: ' + code.DATABASE)
     print('Ready. Database: ' + code.DATABASE)
 
-
 bot.add_cog(Soapbox(bot))
 bot.add_cog(Snipes(bot, day, start, end))
 bot.add_cog(AdminCommands(bot))

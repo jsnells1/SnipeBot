@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File (Integrated Terminal) - DEV DB",
+            "name": "Python: Launch Bot - DEV DB",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/startup.py",
@@ -16,7 +16,7 @@
             ]
         },
         {
-            "name": "Python: Current File (Integrated Terminal) - LIVE DB",
+            "name": "Python: Launch Bot - LIVE DB",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/startup.py",
