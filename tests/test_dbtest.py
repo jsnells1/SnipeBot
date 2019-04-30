@@ -1,11 +1,10 @@
 import pytest
 
-from data import code as Database
-from data.code import Environment
+import data.code as Database
 
 
 def setup_module(module):
-    Database.switchDatabase(Environment.dev)
+    Database.switchDatabase(Database.Environment.dev)
 
 
 def setup_function(function):
