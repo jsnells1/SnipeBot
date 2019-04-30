@@ -9,7 +9,10 @@
         "-p",
         "*test.py"
     ],
-    "python.testing.pyTestEnabled": false,
+    "python.testing.pyTestEnabled": true,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": false,
+    "python.testing.pyTestArgs": [
+        "tests"
+    ]
 }
