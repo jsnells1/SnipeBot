@@ -220,7 +220,7 @@ class Snipes(commands.Cog):
         await ctx.send(self.do_snipe(sniper, members[1:]))
     # endregion
 
-    # Returns the current leaderboard
+    # Returns the current Leaderboard
 
     @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
