@@ -1,5 +1,6 @@
 import pytest
 
+import sniping
 import data.code as Database
 
 
