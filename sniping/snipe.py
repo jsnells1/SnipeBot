@@ -348,4 +348,13 @@ class Snipes(commands.Cog):
 
         await ctx.send('{} guessed the keyword correctly! You open the care package and earn {}!'.format(ctx.author.display_name, msg))
 
+    @commands.command(name='give_carepackage', hidden=True)
+    @commands.has_role(item='Dev Team')
+    async def give_carepackage(self, ctx: commands.Context, member):
+        
+        reward = Database.get_random_reward()
+        msg = CarePackage.get_reward(reward[0], ctx.author.id)
+
+        await ctx.send('{} opens the care package and earn {}!'.format(member.display_name, msg))
+
     # endregion
