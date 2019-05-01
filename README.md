@@ -20,3 +20,5 @@ A discord bot to manage 'Snipes' in the SU Indies club discord. Hopefully to be 
 ~~~
 pip install -r requirements.txt
 ~~~
+* Contact the repository owner for the config file to run the bot
+* Save the file in the root directory
