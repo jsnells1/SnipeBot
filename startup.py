@@ -4,6 +4,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import traceback
 from datetime import datetime, timedelta
 
 import discord
@@ -78,6 +79,18 @@ bot = commands.Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
 @commands.has_role(item='Dev Team')
 async def kill(ctx: commands.Context):
     await bot.logout()
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    log.info("Error caused by message: `{}`".format(ctx.message.content))
+    log.info(''.join(traceback.format_exception_only(type(error), error)))
+
+    if isinstance(error, (commands.MissingPermissions, commands.CheckFailure)):
+        return await ctx.send('```You don\'t have permissions to use that command.```')
 
 
 @bot.event
