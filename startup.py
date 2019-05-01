@@ -35,7 +35,7 @@ log.addHandler(handler)
 
 # Read and Verify config
 config = configparser.ConfigParser()
-    config.sections()
+config.sections()
 
 config.read('config.cfg')
 
