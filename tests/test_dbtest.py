@@ -2,6 +2,8 @@ import pytest
 
 import data.code as Database
 
+OWNER_ID = 273946109896818701
+
 
 def setup_module(module):
     Database.switchDatabase(Database.Environment.dev)
@@ -13,12 +15,5 @@ def setup_function(function):
 
 
 def test_example():
-    assert 1 == 1
-
-
-def test_example2():
-    assert 1 == 1
-
-
-def test_example3():
-    assert 1 == 1
+    assert Database.addPoints(OWNER_ID, 1)
+    assert Database.addPoints(OWNER_ID, -1)

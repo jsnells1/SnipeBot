@@ -295,6 +295,8 @@ def update_scores_names(members):
 
         with sqlite3.connect(code.DATABASE) as conn:
 
+            conn.executemany('UPDATE SnipingMods SET Name = ? WHERE UserID = ?',
+                             params)
             conn.executemany('UPDATE Scores SET Name = ? WHERE UserID = ?',
                              params)
 
