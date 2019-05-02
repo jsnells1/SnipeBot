@@ -114,6 +114,9 @@ class Snipes(commands.Cog):
             await ctx.send('Sorry, you cannot snipe yourself...')
             return
 
+        
+        await ctx.message.add_reaction('🇫')
+
         await ctx.send(self.do_snipe(ctx.author, losers))
 
     @snipeUser.error
