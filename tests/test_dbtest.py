@@ -14,6 +14,10 @@ def setup_function(function):
         pytest.fail('Database not set to dev')
 
 
-def test_example():
+def test_add_points():
     assert Database.addPoints(OWNER_ID, 1)
     assert Database.addPoints(OWNER_ID, -1)
+
+def test_add_remove_user():
+    assert Database.registerUser(1)
+    assert Database.removeUser(1)
