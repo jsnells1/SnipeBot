@@ -8,11 +8,6 @@ A discord bot to manage 'Snipes' in the SU Indies club discord. Hopefully to be 
 * Visual Studio Code
 * [DB Browser for SQLite](https://sqlitebrowser.org/dl/) (Optional but highly recommended)
 
-## Dependencies
-
-* [discord.py](https://github.com/Rapptz/discord.py)
-  * Install via requirements.txt
- 
 ## Setting up environment
 
 * First fork and clone the repository
