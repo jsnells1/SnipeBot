@@ -12,6 +12,8 @@ from data.code import Environment
 
 from .formatting import SnipingFormatter
 
+log = logging.getLogger(__name__)
+
 
 class Snipes(commands.Cog):
     def __init__(self, bot, day, start, end):
@@ -24,6 +26,11 @@ class Snipes(commands.Cog):
         self.snipe_channel = 568115558206406656
         self.indies_guild = 427276681510649866
         self.bg_task = self.bot.loop.create_task(self.maintenance())
+
+        with open('whitelist', 'r') as f:
+            self.whitelist = [int(line.rstrip('\n')) for line in f]
+
+        log.info('Whitelisted users: {}'.format(self.whitelist))
 
     async def maintenance(self):
         await self.bot.wait_until_ready()
@@ -114,7 +121,12 @@ class Snipes(commands.Cog):
             await ctx.send('Sorry, you cannot snipe yourself...')
             return
 
-        
+        for loser in losers:
+            if loser.id in self.whitelist:
+                member = ctx.guild.get_member(loser.id)
+                await ctx.send('```{} has respectfully asked to be on the sniping whitelist. Please refrain from sniping them. Resubmit your snipe without that user.```'.format(member.display_name))
+                return
+
         await ctx.message.add_reaction('🇫')
 
         await ctx.send(self.do_snipe(ctx.author, losers))
@@ -292,6 +304,21 @@ class Snipes(commands.Cog):
 
         await ctx.send('```' + output + '```')
 
+    @commands.command(name='sbwhitelist')
+    async def toggle_whitelist(self, ctx: commands.Context):
+        user = ctx.author.id
+
+        if user in self.whitelist:
+            self.whitelist.remove(user)
+            await ctx.send('```You\'ve been removed from the whitelist```')
+        else:
+            self.whitelist.append(user)
+            await ctx.send('```You\'ve been added to the whitelist```')
+
+        with open('whitelist', 'w') as f:
+            for i in self.whitelist:
+                f.write(str(i) + '\n')
+
     # region CarePackage Commands
     @commands.command(name='smoke_bomb', hidden=True)
     async def use_smoke_bomb(self, ctx: commands.Context):
@@ -354,7 +381,7 @@ class Snipes(commands.Cog):
     @commands.command(name='give_carepackage', hidden=True)
     @commands.has_role(item='Dev Team')
     async def give_carepackage(self, ctx: commands.Context, member):
-        
+
         reward = Database.get_random_reward()
         msg = CarePackage.get_reward(reward[0], ctx.author.id)
 
