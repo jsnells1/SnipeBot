@@ -89,17 +89,16 @@ def do_snipe(guild, sniper, targets):
 def get_leaderboard(rows, guild, killstreakHolder, killstreakHiScore):
     outputRows = [['Name', 'P', 'S', 'D']]
 
-    for i, row in enumerate(rows):
+    for row in rows:
         user = guild.get_member(int(row[0]))
 
-        name = '{:<4}'.format(str(i + 1) + '.') + user.display_name[0:10]
+        outputRows.append([user.display_name[0:8], str(
+            row[1]), str(row[2]), str(row[3])])
 
-        outputRows.append([name, str(row[1]), str(row[2]), str(row[3])])
-
-    records = [['Record', 'Holder', 'Value']]
+    records = [['Record', 'User', '']]
 
     records.append(
-        ['Killstreak', killstreakHolder.display_name[0:10], str(killstreakHiScore[1])])
+        ['Streak', killstreakHolder.display_name[0:8], str(killstreakHiScore[1])])
 
     output = tabulate(records, headers='firstrow',
                       tablefmt='fancy_grid') + '\n\n'

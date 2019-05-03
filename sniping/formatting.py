@@ -60,7 +60,7 @@ class SnipingFormatter:
             returnStr += 'Error registering hit on {}.\n'.format(
                 self.joinListWithAnd(self.errors))
 
-        returnStr = 'Kill Summary:\n\n'
+        returnStr += '```Kill Summary:\n\n'
 
         killsummary = [['Kills', str(len(self.hits))]]
 
@@ -73,4 +73,4 @@ class SnipingFormatter:
         killsummary.append(['Multiplier', 'x' + str(self.multiplier)])
         killsummary.append(['Total Points', str(self.totalPoints)])
 
-        return '```' + returnStr + tabulate(killsummary, tablefmt='plain', colalign=('left', 'right')) + '```'
+        return returnStr + tabulate(killsummary, tablefmt='plain', colalign=('left', 'right')) + '```'
