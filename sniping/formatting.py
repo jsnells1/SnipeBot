@@ -1,3 +1,5 @@
+from tabulate import tabulate
+
 
 class SnipingFormatter:
     def __init__(self):
@@ -58,15 +60,17 @@ class SnipingFormatter:
             returnStr += 'Error registering hit on {}.\n'.format(
                 self.joinListWithAnd(self.errors))
 
-        returnStr += '\n```Kill Summary:\n\n'
-        returnStr += 'Kills:                  {}\n'.format(len(self.hits))
-        if self.leaderHit:
-            returnStr += 'Leader Kill Points:     3\n'
-        if self.revengeHit:
-            returnStr += 'Revenge Kill Points:    2\n'
-        returnStr += 'Pre-Multiplier Total:   {}\n'.format(
-            int(self.totalPoints / self.multiplier))
-        returnStr += 'Multiplier:            x{}\n'.format(self.multiplier)
-        returnStr += 'Total Points:          {:>2}```'.format(self.totalPoints)
+        returnStr = 'Kill Summary:\n\n'
 
-        return returnStr
+        killsummary = [['Kills', str(len(self.hits))]]
+
+        if self.leaderHit:
+            killsummary.append(['Leader Kill Points', '3'])
+        if self.revengeHit:
+            killsummary.append(['Revenge Kill Points', '2'])
+
+        killsummary.append(['Pre-Multiplier Total', str(int(self.totalPoints/ self.multiplier))])
+        killsummary.append(['Multiplier', 'x' + str(self.multiplier)])
+        killsummary.append(['Total Points', str(self.totalPoints)])
+
+        return '```' + returnStr + tabulate(killsummary, tablefmt='plain', colalign=('left', 'right')) + '```'

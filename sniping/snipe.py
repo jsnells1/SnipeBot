@@ -12,6 +12,8 @@ from data.code import Environment
 
 from .formatting import SnipingFormatter
 
+from .snipe_logic import do_snipe, get_leaderboard
+
 log = logging.getLogger(__name__)
 
 
@@ -129,7 +131,9 @@ class Snipes(commands.Cog):
 
         await ctx.message.add_reaction('🇫')
 
-        await ctx.send(self.do_snipe(ctx.author, losers))
+        guild = self.bot.get_guild(self.indies_guild)
+
+        await ctx.send(do_snipe(guild, ctx.author, losers))
 
     @snipeUser.error
     async def sniperUser_error(self, ctx, error):
@@ -142,87 +146,6 @@ class Snipes(commands.Cog):
 
             await ctx.send('```' + error + '```')
 
-    def do_snipe(self, sniper, targets):
-        hits = []
-        immune = []
-        respawns = []
-        errors = []
-        leaderId = Database.getLeader()
-        revengeId = Database.getRevengeUser(sniper.id)
-        bonusPoints = 0
-        leaderHit = False
-        revengeHit = False
-        hasPotato = Database.has_potato(sniper.id)
-
-        multiplier = Database.get_multiplier(sniper.id)
-
-        if multiplier is None or not multiplier:
-            multiplier = 1
-
-        for i, loser in enumerate(targets):
-
-            # Ignore bots
-            if loser.bot:
-                continue
-
-            # Ignore immune users
-            if Database.isImmune(loser.id):
-                immune.append(loser.display_name)
-                continue
-
-            # Ignore respawning users
-            if Database.isRespawning(loser.id):
-                respawns.append(loser.display_name)
-                continue
-
-            if Database.addSnipe(sniper.id, loser.id):
-                if i == 0 and hasPotato:
-                    Database.pass_potato(sniper.id, loser.id)
-
-                if loser.id == leaderId:
-                    leaderHit = True
-                    bonusPoints += 3
-
-                if loser.id == revengeId:
-                    revengeHit = True
-                    bonusPoints += 2
-                    Database.resetRevenge(sniper.id)
-
-                hits.append(loser.nick)
-            else:
-                errors.append(loser.nick)
-
-        killstreak = len(hits)
-        if len(hits) > 0:
-            killstreak = Database.update_killstreak(sniper.id, len(hits))
-
-        bonusPoints = bonusPoints * multiplier + \
-            (len(hits) * multiplier - len(hits))
-
-        Database.addPoints(sniper.id, bonusPoints)
-
-        totalPoints = bonusPoints + len(hits)
-
-        output = SnipingFormatter()
-        output.hits = hits
-        output.immune = immune
-        output.respawns = respawns
-        output.errors = errors
-        output.author = sniper
-        output.hasPotato = hasPotato
-        output.leaderHit = leaderHit
-        output.revengeHit = revengeHit
-        output.potatoName = targets[0].display_name
-        output.killstreak = killstreak
-
-        guild = self.bot.get_guild(self.indies_guild)
-
-        output.revengeMember = guild.get_member(revengeId)
-        output.totalPoints = totalPoints
-        output.multiplier = multiplier
-
-        return output.formatSnipeString()
-
     @commands.command(name='admin_snipe', hidden=True)
     @commands.has_role(item='Dev Team')
     async def admin_snipe(self, ctx: commands.Context, *members: discord.Member):
@@ -231,8 +154,9 @@ class Snipes(commands.Cog):
             return
 
         sniper = members[0]
+        guild = self.bot.get_guild(self.indies_guild)
 
-        await ctx.send(self.do_snipe(sniper, members[1:]))
+        await ctx.send(do_snipe(guild, sniper, members[1:]))
     # endregion
 
     # Returns the current Leaderboard
@@ -248,59 +172,7 @@ class Snipes(commands.Cog):
 
         killstreakHolder = ctx.guild.get_member(killstreakHiScore[0])
 
-        _padding = 3
-        _paddingString = ' ' * _padding
-        _userColName = 'Name'
-        _pointsColName = 'P'
-        _snipesColName = 'S'
-        _deathsColName = 'D'
-        output = ''
-
-        nameColLength = len(_userColName)
-        pointsColLength = len(_pointsColName)
-        snipeColLength = len(_snipesColName)
-        deathColLength = len(_deathsColName)
-
-        for i, row in enumerate(rows):
-            user = ctx.guild.get_member(int(row[0]))
-
-            name = '{:<4}'.format(str(i + 1) + '.') + user.nick[0:10]
-
-            nameColLength = max(nameColLength, len(name))
-            pointsColLength = max(pointsColLength, len(str(row[1])))
-            snipeColLength = max(snipeColLength, len(str(row[2])))
-            deathColLength = max(deathColLength, len(str(row[3])))
-
-        output += 'HiScores \n'
-        output += '-' * (_padding * 3 + nameColLength +
-                         pointsColLength + snipeColLength + deathColLength) + '\n'
-        output += 'Longest Streak: {} - {}\n\n'.format(
-            killstreakHiScore[1], killstreakHolder.display_name[0:10])
-
-        output += _userColName + _paddingString + \
-            ((nameColLength - len(_userColName)) * ' ')
-        output += _pointsColName + _paddingString + \
-            ((pointsColLength - len(_pointsColName)) * ' ')
-        output += _snipesColName + _paddingString + \
-            ((snipeColLength - len(_snipesColName)) * ' ')
-        output += _deathsColName + \
-            ((deathColLength - len(_deathsColName)) * ' ') + '\n'
-        output += '-' * (_padding * 3 + nameColLength + pointsColLength +
-                         snipeColLength + deathColLength) + '\n'
-
-        for i, row in enumerate(rows):
-            user = ctx.guild.get_member(int(row[0]))
-
-            name = '{:<4}'.format(str(i + 1) + '.') + user.nick[0:10]
-
-            output += name + _paddingString + \
-                ((nameColLength - len(name)) * ' ')
-            output += str(row[1]) + _paddingString + \
-                ((pointsColLength - len(str(row[1]))) * ' ')
-            output += str(row[2]) + _paddingString + \
-                ((snipeColLength - len(str(row[2]))) * ' ')
-            output += str(row[3]) + \
-                ((deathColLength - len(str(row[3]))) * ' ') + '\n'
+        output = get_leaderboard(rows, ctx.guild, killstreakHolder, killstreakHiScore)
 
         await ctx.send('```' + output + '```')
 
