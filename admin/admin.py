@@ -13,7 +13,7 @@ class AdminCommands(commands.Cog):
         self.bot = bot
 
     @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
-    @commands.has_permissions(ban_members=True)
+    @commands.has_role(item='Dev Team')
     async def removeUser(self, ctx: commands.Context, member: discord.Member):
         await ctx.send('Are you sure you want to remove user: {} (Y/N)'.format(member.nick))
 
@@ -40,7 +40,7 @@ class AdminCommands(commands.Cog):
             await ctx.send('```User lives to fight another day.```')
 
     @commands.command(name='RegisterUser', hidden=True)
-    @commands.is_owner()
+    @commands.has_role(item='Dev Team')
     async def registerUser(self, ctx: commands.Context, user: discord.Member):
         response = Database.registerUser(user.id)
 
@@ -52,7 +52,7 @@ class AdminCommands(commands.Cog):
         await ctx.send(msg)
 
     @commands.command(name='SetSnipes', hidden=True)
-    @commands.is_owner()
+    @commands.has_role(item='Dev Team')
     async def setSnipes(self, ctx: commands.Context, user: discord.Member, amount: int):
         response = Database.setSnipes(user.id, amount)
 
@@ -64,7 +64,7 @@ class AdminCommands(commands.Cog):
         await ctx.send(msg)
 
     @commands.command(name='SetPoints', hidden=True)
-    @commands.is_owner()
+    @commands.has_role(item='Dev Team')
     async def setPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
         response = Database.setPoints(user.id, amount)
 
@@ -76,7 +76,7 @@ class AdminCommands(commands.Cog):
         await ctx.send(msg)
 
     @commands.command(name='AddPoints', hidden=True)
-    @commands.is_owner()
+    @commands.has_role(item='Dev Team')
     async def addPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
         response = Database.addPoints(user.id, amount)
 
@@ -88,7 +88,7 @@ class AdminCommands(commands.Cog):
         await ctx.send(msg)
 
     @commands.command(name='SetDeaths', hidden=True)
-    @commands.is_owner()
+    @commands.has_role(item='Dev Team')
     async def setDeaths(self, ctx: commands.Context, user: discord.Member, amount: int):
         response = Database.setDeaths(user.id, amount)
 
@@ -132,13 +132,14 @@ class AdminCommands(commands.Cog):
         else:
             await ctx.send('```Live```')
 
+    # region CPU Health
     @commands.command(name='HealthCheck', brief='Returns a health check for the bot and the Pi',
                       help='It\'s the simplest one in the book')
     async def getHealth(self, ctx: commands.Context):
 
         healthStr = 'Tell the Indies that the Pi said hello.\n\n'
         heat = self.getCPUtemperature()
-        healthStr += 'Temp: {}C | {}F\n'.format(heat,
+        healthStr += 'Temp: {}C | {:.2f}F\n'.format(heat,
                                                 9.0 / 5.0 * float(heat) + 32)
         healthStr += 'Free RAM: {}KB\n'.format(
             int(float(self.getRAMinfo()[1]) / 1024))
@@ -168,6 +169,8 @@ class AdminCommands(commands.Cog):
     def getCPUuse(self):
         return(str(os.popen(r"top -n1 | awk '/Cpu\(s\):/ {print $2}'").readline().strip()))
 
+    # endregion CPU Health
+
     @commands.command(name='backup_db')
     @commands.has_role(item='Dev Team')
     async def backup_db(self, ctx: commands.Context):
@@ -190,7 +193,6 @@ class AdminCommands(commands.Cog):
             await ctx.send('```Usernames updated.```')
         else:
             await ctx.send('```Usernames failed to be updated.```')
-
 
     @commands.command(name='assign_sniper_role')
     @commands.has_role(item='Dev Team')

@@ -13,7 +13,6 @@ def do_snipe(guild, sniper, targets):
 
     leaderId = Database.getLeader()
     revengeId = Database.getRevengeUser(sniper.id)
-    hasPotato = Database.has_potato(sniper.id)
     multiplier = Database.get_multiplier(sniper.id)
 
     bonusPoints = 0
@@ -21,10 +20,10 @@ def do_snipe(guild, sniper, targets):
     leaderHit = False
     revengeHit = False
 
-    if multiplier is None or not multiplier:
+    if multiplier == -1:
         multiplier = 1
 
-    for i, loser in enumerate(targets):
+    for loser in targets:
 
         # Ignore bots
         if loser.bot:
@@ -41,9 +40,6 @@ def do_snipe(guild, sniper, targets):
             continue
 
         if Database.addSnipe(sniper.id, loser.id):
-            if i == 0 and hasPotato:
-                Database.pass_potato(sniper.id, loser.id)
-
             if loser.id == leaderId:
                 leaderHit = True
                 bonusPoints += 3
@@ -60,6 +56,9 @@ def do_snipe(guild, sniper, targets):
     killstreak = len(hits)
     if len(hits) > 0:
         killstreak = Database.update_killstreak(sniper.id, len(hits))
+        hasPotato = Database.has_potato(sniper.id)
+        if hasPotato:
+            Database.pass_potato(sniper.id, hits[0])
 
     bonusPoints = bonusPoints * multiplier + \
         (len(hits) * multiplier - len(hits))
@@ -73,7 +72,7 @@ def do_snipe(guild, sniper, targets):
     output.immune = immune
     output.respawns = respawns
     output.errors = errors
-    output.author = sniper
+    output.sniper = sniper
     output.hasPotato = hasPotato
     output.leaderHit = leaderHit
     output.revengeHit = revengeHit

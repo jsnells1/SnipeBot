@@ -2,6 +2,7 @@ from datetime import datetime
 
 import discord
 import discord.ext.commands as commands
+from tabulate import tabulate
 
 from data import code as Database
 from data.code import Environment
@@ -18,51 +19,16 @@ class Soapbox(commands.Cog):
         if not response:
             await ctx.send('Error retrieving Soapbox Schedule.')
 
-        _padding = 2
-        _paddingString = ' ' * _padding
-        _idColName = 'ID'
-        _nameColName = 'Name'
-        _dateColName = 'Date'
-        _topicColName = 'Topic'
-
-        idColLength = len(_idColName)
-        nameColLength = len(_nameColName)
-        dateColLength = len(_dateColName)
-        topicColLength = len(_topicColName)
+        outRows = [['ID', 'Name', 'Date', 'Topic']]
 
         for row in response:
-            idColLength = max(idColLength, len(str(row[0])))
-            nameColLength = max(nameColLength, len(row[1]))
-
             date = datetime.fromtimestamp(row[2]).strftime('%b. %d')
 
-            dateColLength = max(dateColLength, len(date))
-            topicColLength = max(topicColLength, len(row[3]))
+            outRows.append([str(row[0]), row[1], date, row[3]])
 
-        returnStr = _idColName + \
-            (idColLength - len(_idColName)) * ' ' + _paddingString
-        returnStr += _nameColName + \
-            (nameColLength - len(_nameColName)) * ' ' + _paddingString
-        returnStr += _dateColName + \
-            (dateColLength - len(_dateColName)) * ' ' + _paddingString
-        returnStr += _topicColName + '\n'
-        returnStr += '-' * (idColLength + nameColLength +
-                            dateColLength + topicColLength + (3*_padding)) + '\n'
+        outString = tabulate(outRows, headers='firstrow', tablefmt='fancy_grid', colalign=('left',))
 
-        for row in response:
-            returnStr += str(row[0]) + _paddingString + \
-                (idColLength - len(str(row[0]))) * ' '
-            returnStr += row[1] + _paddingString + \
-                (nameColLength - len(str(row[1]))) * ' '
-
-            date = datetime.fromtimestamp(row[2]).strftime('%b. %d')
-
-            returnStr += (date or '-') + _paddingString + \
-                (dateColLength - len(date)) * ' '
-            returnStr += (row[3] or '-') + _paddingString + \
-                (topicColLength - len(str(row[3]))) * ' ' + '\n'
-
-        await ctx.send('```' + returnStr + '```')
+        await ctx.send('```' + outString + '```')
 
     @commands.command(name='new_soapbox', usage='"Name" "Date" "Topic"', brief='(Admin-Only) Creates a new soapbox entry in the schedule',
                       help='To create a new entry type:\n!new_soapbox "Name" "Date (Ex. 4/11)" "Topic"\n Quotes are mandatory and all 3 fields are required')
@@ -91,7 +57,7 @@ class Soapbox(commands.Cog):
         else:
             await ctx.send('Error creating soapbox.')
 
-    @commands.command(name='delete_soapbox_entry', brief='(Admin-Only) Deletes a soapbox entry', usage='id',
+    @commands.command(name='delete_soapbox', brief='(Admin-Only) Deletes a soapbox entry', usage='id',
                       help="Deletes the entry specified with the id argument")
     @commands.has_permissions(ban_members=True)
     async def deleteEntry(self, ctx: commands.Context, id):
@@ -132,7 +98,7 @@ class Soapbox(commands.Cog):
         else:
             await ctx.send('Operation aborted.')
 
-    @commands.command(name='update_soapbox_entry', usage='id "Name" "Date" "Topic"', brief='(Admin-Only) Updates a soapbox entry',
+    @commands.command(name='update_soapbox', usage='id "Name" "Date" "Topic"', brief='(Admin-Only) Updates a soapbox entry',
                       help='Updates the specified entry given the row id. The entry is updated using the supplied Name, Date, and Topic')
     @commands.has_permissions(ban_members=True)
     async def updateEntry(self, ctx: commands.Context, id=None, *args):

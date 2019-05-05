@@ -221,36 +221,22 @@ def addSnipe(winner, loser):
         with sqlite3.connect(code.DATABASE) as conn:
             c = conn.cursor()
 
+            # Ensure both the sniper and snipee are inserted into the database
             c.execute(
-                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(winner))
-
-            c.execute(
-                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({})'.format(loser))
+                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({}), ({})'.format(winner, loser))
 
             c.execute(
-                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(winner))
+                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({}), ({})'.format(winner, loser))
 
+            # For the sniper, add 1 to their snipes and points and remove their respawn
             c.execute(
-                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({})'.format(loser))
+                'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1, Respawn = NULL WHERE UserID = {}'.format(winner))
 
-            c.execute(
-                'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1 WHERE UserID = {}'.format(winner))
-            c.execute(
-                'UPDATE Scores SET Deaths = Deaths + 1, Killstreak = 0 WHERE UserID = {}'.format(loser))
-
-            c.execute(
-                'UPDATE Scores SET Respawn = NULL WHERE UserID = {}'.format(winner))
-
-            date = datetime.now() + timedelta(hours=3, minutes=30)
-
-            c.execute(
-                'UPDATE Scores SET Revenge = {}, RevengeTime = {} WHERE UserID = {}'.format(winner, date.timestamp(), loser))
-
-            RESPAWN_TIME = 2
-
-            date = datetime.now() + timedelta(hours=RESPAWN_TIME)
-            c.execute('UPDATE Scores SET Respawn = ? WHERE UserID = ?',
-                      (date.timestamp(), loser))
+            # For the loser, add 1 to deaths, reset their killstreak, set their Respawn to 2 hours, and set the revenge id
+            respawn = datetime.now() + timedelta(hours=2)
+            revenge = datetime.now() + timedelta(hours=3, minutes=30)
+            c.execute('UPDATE Scores SET Deaths = Deaths + 1, Killstreak = 0, Respawn = ?, Revenge = ?, RevengeTime = ? WHERE UserID = ?',
+                      (respawn.timestamp(), winner, revenge, loser))
 
             conn.commit()
 
@@ -347,7 +333,7 @@ def get_multiplier(userId):
             return int(multi[0])
 
     except:
-        return False
+        return -1
 
 
 def update_killstreak(userId, kills):

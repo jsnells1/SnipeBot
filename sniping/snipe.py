@@ -85,6 +85,8 @@ class Snipes(commands.Cog):
         author = ctx.message.author
         points = Database.getUserPoints(author.id)
 
+        await ctx.send('︻デ═一')
+
         if isinstance(points, bool) and not points:
             await ctx.send("Error retrieving points...")
             return
