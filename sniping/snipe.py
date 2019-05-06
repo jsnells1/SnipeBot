@@ -10,8 +10,6 @@ import sniping.carepackage as CarePackage
 from data import code as Database
 from data.code import Environment
 
-from .formatting import SnipingFormatter
-
 from .snipe_logic import do_snipe, get_leaderboard
 
 log = logging.getLogger(__name__)
@@ -84,8 +82,6 @@ class Snipes(commands.Cog):
     async def getPoints(self, ctx: commands.Context):
         author = ctx.message.author
         points = Database.getUserPoints(author.id)
-
-        await ctx.send('︻デ═一')
 
         if isinstance(points, bool) and not points:
             await ctx.send("Error retrieving points...")
@@ -162,7 +158,6 @@ class Snipes(commands.Cog):
     # endregion
 
     # Returns the current Leaderboard
-
     @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
         rows = Database.getLeaderboard()
@@ -174,10 +169,12 @@ class Snipes(commands.Cog):
 
         killstreakHolder = ctx.guild.get_member(killstreakHiScore[0])
 
-        output = get_leaderboard(rows, ctx.guild, killstreakHolder, killstreakHiScore)
+        output = get_leaderboard(
+            rows, ctx.guild, killstreakHolder, killstreakHiScore)
 
         await ctx.send('```' + output + '```')
 
+    # Adds are removes the user from the whitelist
     @commands.command(name='sbwhitelist')
     async def toggle_whitelist(self, ctx: commands.Context):
         user = ctx.author.id

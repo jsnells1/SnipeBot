@@ -2,7 +2,7 @@ from tabulate import tabulate
 
 from data import code as Database
 
-from .formatting import SnipingFormatter
+from .formatting import formatSnipeString
 
 
 def do_snipe(guild, sniper, targets):
@@ -67,22 +67,12 @@ def do_snipe(guild, sniper, targets):
 
     totalPoints = bonusPoints + len(hits)
 
-    output = SnipingFormatter()
-    output.hits = hits
-    output.immune = immune
-    output.respawns = respawns
-    output.errors = errors
-    output.sniper = sniper
-    output.hasPotato = hasPotato
-    output.leaderHit = leaderHit
-    output.revengeHit = revengeHit
-    output.potatoName = targets[0].display_name
-    output.killstreak = killstreak
-    output.revengeMember = guild.get_member(revengeId)
-    output.totalPoints = totalPoints
-    output.multiplier = multiplier
+    revengeMember = guild.get_member(revengeId)
 
-    return output.formatSnipeString()
+    output = formatSnipeString(sniper=sniper, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
+                               revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=multiplier)
+
+    return output
 
 
 def get_leaderboard(rows, guild, killstreakHolder, killstreakHiScore):
