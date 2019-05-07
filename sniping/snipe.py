@@ -8,7 +8,6 @@ import discord.ext.commands as commands
 
 import sniping.carepackage as CarePackage
 from data import code as Database
-from data.code import Environment
 
 from .snipe_logic import do_snipe, get_leaderboard
 
