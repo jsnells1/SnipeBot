@@ -39,6 +39,7 @@ def do_snipe(guild, sniper, targets):
             respawns.append(loser.display_name)
             continue
 
+        # Try to register the snipe
         if Database.addSnipe(sniper.id, loser.id):
             if loser.id == leaderId:
                 leaderHit = True
