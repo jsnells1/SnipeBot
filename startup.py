@@ -15,6 +15,7 @@ from data import code
 from data.code import Environment
 from sniping.snipe import Snipes
 from soapbox.soapbox import Soapbox
+from club_calendar.club_calendar import ClubCalendar
 
 
 # Create log directory if it doesn't exist
@@ -101,4 +102,5 @@ async def on_ready():
 bot.add_cog(Soapbox(bot))
 bot.add_cog(Snipes(bot, day, start, end))
 bot.add_cog(AdminCommands(bot))
+bot.add_cog(ClubCalendar(bot))
 bot.run(TOKEN)
