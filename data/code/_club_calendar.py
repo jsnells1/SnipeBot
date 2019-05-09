@@ -32,3 +32,24 @@ def _executeStmt_noReturn(cmds):
     except Exception as e:
         log.critical('Error executing statement(s): %s', cmds, exc_info=e)
         return False
+
+
+def insert_event(date, description, repeating):
+    commands = [
+        ('INSERT INTO Calendar (Date, Description, Repeating) VALUES (?, ?, ?)', (date, description, repeating))]
+
+    return _executeStmt_noReturn(commands)
+
+
+def get_events(start, end):
+
+    try:
+        with sqlite3.connect(code.DATABASE) as conn:
+            conn.row_factory = sqlite3.Row
+
+            r = conn.execute(
+                'SELECT Date, Description, Repeating FROM Calendar WHERE Date >= ? AND Date <= ?', (start, end)).fetchall()
+
+            return r
+    except:
+        return None
