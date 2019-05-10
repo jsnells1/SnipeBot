@@ -236,7 +236,7 @@ def addSnipe(winner, loser):
             respawn = datetime.now() + timedelta(hours=2)
             revenge = datetime.now() + timedelta(hours=3, minutes=30)
             c.execute('UPDATE Scores SET Deaths = Deaths + 1, Killstreak = 0, Respawn = ?, Revenge = ?, RevengeTime = ? WHERE UserID = ?',
-                      (respawn.timestamp(), winner, revenge, loser))
+                      (respawn.timestamp(), winner, revenge.timestamp(), loser))
 
             conn.commit()
 
