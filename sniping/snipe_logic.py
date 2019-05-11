@@ -55,6 +55,7 @@ def do_snipe(guild, sniper, targets):
             errors.append(loser.nick)
 
     killstreak = len(hits)
+    hasPotato = False
     if len(hits) > 0:
         killstreak = Database.update_killstreak(sniper.id, len(hits))
         hasPotato = Database.has_potato(sniper.id)
