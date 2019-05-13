@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Launch Bot - DEV DB",
+            "name": "Launch Bot - DEV",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/startup.py",
@@ -13,7 +13,7 @@
             ]
         },
         {
-            "name": "Python: Launch Bot - LIVE DB",
+            "name": "Launch Bot - LIVE",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/startup.py",
