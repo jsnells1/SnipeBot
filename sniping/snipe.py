@@ -5,6 +5,7 @@ from datetime import datetime
 
 import discord
 import discord.ext.commands as commands
+from discord.ext import tasks
 
 import sniping.carepackage as CarePackage
 from data import code as Database
@@ -15,64 +16,61 @@ log = logging.getLogger(__name__)
 
 
 class Snipes(commands.Cog):
-    def __init__(self, bot, day, start, end):
+    def __init__(self, bot, day, begin, end):
         self.bot = bot
         self.club_day = day
-        self.club_start = start
+        self.club_start = begin
         self.club_end = end
-        self.general_channel = 427276681510649868
-        self.test_channel = 566076016825597972
-        self.snipe_channel = 568115558206406656
-        self.indies_guild = 427276681510649866
-        self.bg_task = self.bot.loop.create_task(self.maintenance())
+        self.test_channel_id = 566076016825597972
+        self.test_channel = bot.get_channel(self.test_channel_id)
+        self.snipe_channel_id = 568115558206406656
+        self.snipe_channel = bot.get_channel(self.snipe_channel_id)
+        self.indies_guild_id = 427276681510649866
+        self.indies_guild = bot.get_channel(self.indies_guild_id)
+        self.maintenance.start()
 
         with open('whitelist', 'r') as f:
             self.whitelist = [int(line.rstrip('\n')) for line in f]
 
         log.info('Whitelisted users: {}'.format(self.whitelist))
 
+    @tasks.loop(minutes=1.0)
     async def maintenance(self):
+        if Database.DATABASE == Database.DEV_DATABASE:
+            channel = self.test_channel
+        else:
+            channel = self.snipe_channel
+
+        respawns = Database.getAllRespawns()
+        Database.removeExpiredRevenges()
+        explosions = Database.check_exploded_potatoes()
+        expirations = Database.get_expired_immunes()
+
+        expirations = [self.indies_guild.get_member(
+            user).display_name for user in expirations]
+
+        if expirations and len(expirations) > 0:
+            await channel.send('```It\'s hunting season! Immunity has expired for: {}```'.format(', '.join(expirations)))
+
+        explosions = [self.indies_guild.get_member(
+            user).display_name for user in explosions]
+
+        if explosions and len(explosions) > 0:
+            await channel.send('```BOOM! One or more potatoes exploded and the following players lost a life and 3 points: {}```'.format(', '.join(explosions)))
+
+        if Database.remove_expired_carepackage():
+            await channel.send('```A carepackage has expired without anyone claiming it. Better luck next time.```')
+
+        if len(respawns) > 0:
+            users = []
+            for user in respawns:
+                users.append(self.indies_guild.get_member(int(user)).nick)
+
+            await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
+
+    @maintenance.before_loop
+    async def before_maintenance(self):
         await self.bot.wait_until_ready()
-
-        guild = self.bot.get_guild(self.indies_guild)
-
-        snipe_channel = self.bot.get_channel(self.snipe_channel)
-        test_channel = self.bot.get_channel(self.test_channel)
-
-        while not self.bot.is_closed():
-            if Database.DATABASE == Database.DEV_DATABASE:
-                channel = test_channel
-            else:
-                channel = snipe_channel
-
-            respawns = Database.getAllRespawns()
-            Database.removeExpiredRevenges()
-            explosions = Database.check_exploded_potatoes()
-            expirations = Database.get_expired_immunes()
-
-            expirations = [guild.get_member(
-                user).display_name for user in expirations]
-
-            if expirations and len(expirations) > 0:
-                await channel.send('```It\'s hunting season! Immunity has expired for: {}```'.format(', '.join(expirations)))
-
-            explosions = [guild.get_member(
-                user).display_name for user in explosions]
-
-            if explosions and len(explosions) > 0:
-                await channel.send('```BOOM! One or more potatoes exploded and the following players lost a life and 3 points: {}```'.format(', '.join(explosions)))
-
-            if Database.remove_expired_carepackage():
-                await channel.send('```A carepackage has expired without anyone claiming it. Better luck next time.```')
-
-            if len(respawns) > 0:
-                users = []
-                for user in respawns:
-                    users.append(guild.get_member(int(user)).nick)
-
-                await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
-
-            await asyncio.sleep(60)
 
     # Returns a user's points or snipes
 
@@ -102,7 +100,7 @@ class Snipes(commands.Cog):
                       help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipeUser(self, ctx: commands.Context, *losers: discord.Member):
 
-        if ctx.message.channel.id != self.snipe_channel and ctx.message.channel.id != self.test_channel:
+        if ctx.message.channel.id != self.snipe_channel_id and ctx.message.channel.id != self.test_channel_id:
             await ctx.send('Please use the snipebot channel for sniping :)')
             return
 
@@ -128,9 +126,7 @@ class Snipes(commands.Cog):
 
         await ctx.message.add_reaction('🇫')
 
-        guild = self.bot.get_guild(self.indies_guild)
-
-        await ctx.send(do_snipe(guild, ctx.author, losers))
+        await ctx.send(do_snipe(ctx, ctx.author, losers))
 
     @snipeUser.error
     async def sniperUser_error(self, ctx, error):
@@ -151,9 +147,8 @@ class Snipes(commands.Cog):
             return
 
         sniper = members[0]
-        guild = self.bot.get_guild(self.indies_guild)
 
-        await ctx.send(do_snipe(guild, sniper, members[1:]))
+        await ctx.send(do_snipe(ctx, sniper, members[1:]))
     # endregion
 
     # Returns the current Leaderboard
@@ -224,8 +219,7 @@ class Snipes(commands.Cog):
     @commands.command(name='announce_carepackage', hidden=True)
     @commands.has_role(item="Dev Team")
     async def announce_carepackage(self, ctx: commands.Context):
-        channel = ctx.guild.get_channel(self.snipe_channel)
-        await channel.send('{} A carepackage is spawning soon!'.format(ctx.guild.default_role))
+        await self.snipe_channel.send('{} A carepackage is spawning soon!'.format(ctx.guild.default_role))
 
     @commands.command(name='guess', hidden=True)
     async def guess_keyword(self, ctx: commands.Context, keyword):

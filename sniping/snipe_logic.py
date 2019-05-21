@@ -1,11 +1,12 @@
 from tabulate import tabulate
+from discord.ext import commands
 
 from data import code as Database
 
 from .formatting import formatSnipeString
 
 
-def do_snipe(guild, sniper, targets):
+def do_snipe(ctx, sniper, targets):
     hits = []
     immune = []
     respawns = []
@@ -69,7 +70,7 @@ def do_snipe(guild, sniper, targets):
 
     totalPoints = bonusPoints + len(hits)
 
-    revengeMember = guild.get_member(revengeId)
+    revengeMember = commands.MemberConverter().convert(ctx, revengeId)
 
     output = formatSnipeString(sniper=sniper, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
                                revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=multiplier)

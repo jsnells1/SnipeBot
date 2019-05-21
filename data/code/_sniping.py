@@ -191,9 +191,8 @@ def getRevengeUser(userID):
 
             return row[0]
 
-    except Exception as e:
-        print(e)
-        return False
+    except:
+        return None
 
 
 def getAllRespawns():
