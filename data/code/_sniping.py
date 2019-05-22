@@ -5,124 +5,110 @@ from datetime import datetime, timedelta
 import discord
 
 from data import code
+from data.models.data_models import *
 
 log = logging.getLogger(__name__)
 
 
-def _executeStmt_noReturn(cmds):
-    try:
-        # Input validation
-        for cmd in cmds:
-            if not isinstance(cmd, tuple) or len(cmd) != 2:
-                raise ValueError('cmds must be a list of tuples of size 2')
-
-            if not isinstance(cmd[0], str) or not isinstance(cmd[1], tuple):
-                raise ValueError(
-                    'Each command must be a tuple of size 2 with the string command and the parameter tuple')
-
-        with sqlite3.connect(code.DATABASE) as conn:
-            for cmd in cmds:
-                stmt = cmd[0]
-                params = cmd[1]
-
-                conn.execute(stmt, params)
-
-            conn.commit()
-
-        return True
-
-    except Exception as e:
-        log.critical('Error executing statement(s): %s', cmds, exc_info=e)
-        return False
-
-# region Inserting and Updating
-
-
 def registerUser(userId):
-    commands = [('INSERT or IGNORE INTO Scores (UserID) VALUES (?)', (userId,)),
-                ('INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))]
+    with database.atomic() as transaction:
+        try:
+            Scores.insert(user_id=userId).on_conflict_ignore().execute()
+            SnipingMods.insert(user_id=userId).on_conflict_ignore().execute()
 
-    response = _executeStmt_noReturn(commands)
+            log.info('User registered with ID: %s', userId)
 
-    if response:
-        log.info('User registered with ID: %s', userId)
-
-    return response
+            return True
+        except:
+            log.exception('Error registering user')
+            transaction.rollback()
+            return False
 
 
 def removeUser(userId):
-    commands = [('DELETE FROM Scores WHERE UserID = ?', (userId,)),
-                ('DELETE FROM SnipingMods WHERE UserID = ?', (userId,))]
+    try:
+        user = Scores.select().where(Scores.user_id == 1).limit(1)
+        user = user[0] if len(user) > 0 else None
 
-    response = _executeStmt_noReturn(commands)
+        if user:
+            user.delete_instance()
 
-    if response:
+        user = SnipingMods.select().where(SnipingMods.user_id == 1).limit(1)
+        user = user[0] if len(user) > 0 else None
+
+        if user:
+            user.delete_instance()
+
         log.info('User deleted with ID: %s', userId)
+        return True
 
-    return response
+    except:
+        log.exception('Error removing user')
+        return False
 
 
 def resetRevenge(userID):
-
-    commands = [
-        ('UPDATE Scores SET Revenge = ? WHERE UserId = ?', (None, userID,))]
-
-    response = _executeStmt_noReturn(commands)
-
-    if response:
+    try:
+        Scores.update(revenge=None).where(Scores.user_id == userID).execute()
         log.info('Revenge reset for: %s', userID)
-
-    return response
+        return True
+    except:
+        log.exception('Error resetting revenge')
+        return False
 
 
 def removeExpiredRevenges():
     today = datetime.now().timestamp()
 
-    commands = [
-        ('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today,))]
-
-    return _executeStmt_noReturn(commands)
-
-
-def setRespawn(userID, conn):
-    RESPAWN_TIME = 2
-
-    date = datetime.now() + timedelta(hours=RESPAWN_TIME)
-    commands = [('UPDATE Scores SET Respawn = ? WHERE UserID = ?',
-                 (date.timestamp(), userID))]
-
-    return _executeStmt_noReturn(commands)
+    try:
+        Scores.update(revenge=None, revenge_time=None).where(
+            Scores.revenge_time < today).execute()
+        return True
+    except:
+        log.exception('Error removing expired revenges')
+        return False
 
 
-def addPoints(userId, points):
-    commands = [
-        ('UPDATE Scores SET Points = Points + ? WHERE UserID = ?', (points, userId))]
-
-    return _executeStmt_noReturn(commands)
+def addPoints(userId, amt):
+    try:
+        Scores.update({Scores.points: Scores.points + amt}
+                      ).where(Scores.user_id == userId).execute()
+        return True
+    except:
+        log.exception('Error adding points')
+        return False
 
 
 def setSnipes(userId, amt):
 
-    commands = [
-        ('UPDATE Scores SET Snipes = ? WHERE UserID = ?', (amt, userId))]
+    try:
+        Scores.update({Scores.snipes: amt}).where(
+            Scores.user_id == userId).execute()
 
-    return _executeStmt_noReturn(commands)
+        return True
+    except:
+        log.exception('Error setting snipes')
+        return False
 
 
 def setPoints(userId, amt):
 
-    commands = [
-        ('UPDATE Scores SET Points = ? WHERE UserID = ?', (amt, userId))]
-
-    return _executeStmt_noReturn(commands)
+    try:
+        Scores.update(points=amt).where(Scores.user_id == userId).execute()
+        return True
+    except:
+        log.exception('Error setting points')
+        return False
 
 
 def setDeaths(userId, amt):
 
-    commands = [
-        ('UPDATE Scores SET Deaths = ? WHERE UserID = ?', (amt, userId))]
-
-    return _executeStmt_noReturn(commands)
+    try:
+        Scores.update(deaths=amt).where(Scores.user_id == userId).execute()
+        return True
+    except:
+        log.exception('Error setting deaths')
+        return False
 
 # endregion Inserting and Updating
 
