@@ -201,5 +201,5 @@ class AdminCommands(commands.Cog):
         role = discord.utils.get(ctx.guild.roles, name='Sniper Team')
 
         for userId in userIds:
-            member = ctx.guild.get_member(userId[0])
+            member = ctx.guild.get_member(userId)
             await member.add_roles(role)

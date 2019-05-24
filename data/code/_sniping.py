@@ -19,41 +19,47 @@ def registerUser(userId):
             log.info('User registered with ID: %s', userId)
 
             return True
-        except:
-            log.exception('Error registering user')
+        except Exception as e:
+            log.exception('Error registering user_id: %s', userId)
             transaction.rollback()
             return False
 
 
 def removeUser(userId):
     try:
-        user = Scores.select().where(Scores.user_id == 1).limit(1)
-        user = user[0] if len(user) > 0 else None
+        user = Scores.get(userId)
+        user.delete_instance()
 
-        if user:
-            user.delete_instance()
+        log.info('User deleted with ID: %s', userId)
+    except Scores.DoesNotExist:
+        pass
+    except:
+        log.exception('Error removing user_id: %s', userId)
+        return False
 
-        user = SnipingMods.select().where(SnipingMods.user_id == 1).limit(1)
-        user = user[0] if len(user) > 0 else None
-
-        if user:
-            user.delete_instance()
+    try:
+        user = SnipingMods.get(userId)
+        user.delete_instance()
 
         log.info('User deleted with ID: %s', userId)
         return True
 
+    except SnipingMods.DoesNotExist:
+        return True
     except:
-        log.exception('Error removing user')
+        log.exception('Error removing user_id: %s', userId)
         return False
 
 
-def resetRevenge(userID):
+def resetRevenge(userId):
     try:
-        Scores.update(revenge=None).where(Scores.user_id == userID).execute()
-        log.info('Revenge reset for: %s', userID)
+        Scores.get(userId).update(revenge=None).execute()
+        log.info('Revenge reset for: %s', userId)
+        return True
+    except Scores.DoesNotExist:
         return True
     except:
-        log.exception('Error resetting revenge')
+        log.exception('Error resetting revenge for user_id: %s', userId)
         return False
 
 
@@ -75,7 +81,7 @@ def addPoints(userId, amt):
                       ).where(Scores.user_id == userId).execute()
         return True
     except:
-        log.exception('Error adding points')
+        log.exception('Error adding points (%s) for user_id: %s', amt, userId)
         return False
 
 
@@ -87,7 +93,7 @@ def setSnipes(userId, amt):
 
         return True
     except:
-        log.exception('Error setting snipes')
+        log.exception('Error setting snipes (%s) for user_id: %s', amt, userId)
         return False
 
 
@@ -97,7 +103,7 @@ def setPoints(userId, amt):
         Scores.update(points=amt).where(Scores.user_id == userId).execute()
         return True
     except:
-        log.exception('Error setting points')
+        log.exception('Error setting points (%s) for user_id: %s', amt, userId)
         return False
 
 
@@ -107,7 +113,7 @@ def setDeaths(userId, amt):
         Scores.update(deaths=amt).where(Scores.user_id == userId).execute()
         return True
     except:
-        log.exception('Error setting deaths')
+        log.exception('Error setting deaths (%s) for user_id: %s', amt, userId)
         return False
 
 # endregion Inserting and Updating
@@ -115,88 +121,68 @@ def setDeaths(userId, amt):
 
 def getUserPoints(userId):
     try:
-        conn = sqlite3.connect(code.DATABASE)
-        c = conn.cursor()
+        query = Scores.select(Scores.points).where(
+            Scores.user_id == userId).limit(1).namedtuples()
 
-        c.execute(
-            'SELECT Points FROM Scores WHERE UserID = {}'.format(userId))
+        if len(query) > 0:
+            return query[0].points
 
-        row = c.fetchone()
+        return None
+    except:
+        log.exception('Error getting points for userid: %s', userId)
+        return None
 
-        if row is None:
-            return None
-        else:
-            return row[0]
+
+def isRespawning(userId):
+    try:
+        query = Scores.select(Scores.respawn).where(
+            Scores.user_id == userId).limit(1).namedtuples()
+
+        if len(query) < 1:
+            return False
+
+        return datetime.now().timestamp() < query[0].respawn
 
     except:
-        return False
-
-    finally:
-        conn.close()
-
-
-def isRespawning(userID):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-            c = conn.cursor()
-
-            row = c.execute(
-                'SELECT Respawn FROM Scores WHERE UserID = {}'.format(userID)).fetchone()
-
-            if row is not None:
-                if row[0] is not None:
-                    respawn = datetime.fromtimestamp(row[0])
-
-                    return datetime.now() < respawn
-
-            return False
-    except Exception as e:
-        print(e)
+        log.exception('Error checking for respawn for user_id: %s', userId)
         return False
 
 
 def getAllUsers():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
-            row = conn.execute(
-                'SELECT UserID FROM Scores').fetchall()
-
-            return row
-    except Exception as e:
-        print(e)
-        return False
-
-
-def getRevengeUser(userID):
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
-            c = conn.cursor()
-
-            row = c.execute(
-                'SELECT Revenge FROM Scores WHERE UserID = {}'.format(userID)).fetchone()
-
-            return row[0]
-
+        users = Scores.select(Scores.user_id)
+        return [user.user_id for user in users]
     except:
+        log.exception('Error retrieving users')
+        return []
+
+
+def getRevengeUser(userId):
+    try:
+        return Scores.get(userId).revenge
+    except Scores.DoesNotExist:
+        return None
+    except:
+        log.exception('Error getting revenge user for user_id: %s', userId)
         return None
 
 
 def getAllRespawns():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        date = datetime.now().timestamp()
 
-            date = datetime.now().timestamp()
-            rows = conn.execute(
-                'SELECT UserID FROM Scores WHERE Respawn < {}'.format(date)).fetchall()
+        respawns = Scores.select(Scores.user_id).where(
+            Scores.respawn < date).namedtuples().execute()
 
-            rows = [x[0] for x in rows]
+        if len(respawns) == 0:
+            return []
 
-            conn.execute(
-                'UPDATE Scores SET Respawn = ? WHERE Respawn < {}'.format(date), (None,))
+        respawns = [x.user_id for x in respawns]
 
-            conn.commit()
+        Scores.update({Scores.respawn: None}).where(
+            Scores.respawn < date).execute()
 
-        return rows
+        return respawns
     except:
         return False
 
