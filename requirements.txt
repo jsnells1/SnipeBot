@@ -1,3 +1,4 @@
 discord.py==1.1.1
 pytest==4.4.1
 tabulate==0.8.3
+peewee==3.9.5
