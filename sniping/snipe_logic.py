@@ -78,14 +78,14 @@ def do_snipe(ctx, sniper, targets):
     return output
 
 
-def get_leaderboard(rows, guild, killstreakHolder, killstreakHiScore):
+async def get_leaderboard(ctx, rows, killstreakHolder, killstreakHiScore):
     outputRows = [['Name', 'P', 'S', 'D']]
 
     for row in rows:
-        user = guild.get_member(int(row[0]))
+        user = await commands.MemberConverter().convert(ctx, str(row.user_id))
 
         outputRows.append([user.display_name[0:8], str(
-            row[1]), str(row[2]), str(row[3])])
+            row.points), str(row.snipes), str(row.deaths)])
 
     records = [['Record', 'User', '']]
 

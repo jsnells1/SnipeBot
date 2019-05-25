@@ -163,8 +163,8 @@ class Snipes(commands.Cog):
 
         killstreakHolder = ctx.guild.get_member(killstreakHiScore[0])
 
-        output = get_leaderboard(
-            rows, ctx.guild, killstreakHolder, killstreakHiScore)
+        output = await get_leaderboard(
+            ctx, rows, killstreakHolder, killstreakHiScore)
 
         await ctx.send('```' + output + '```')
 

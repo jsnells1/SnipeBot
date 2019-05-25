@@ -53,7 +53,7 @@ def removeUser(userId):
 
 def resetRevenge(userId):
     try:
-        Scores.get(userId).update(revenge=None).execute()
+        Scores.get(userId).update(revenge=None, revenge_time=None).execute()
         log.info('Revenge reset for: %s', userId)
         return True
     except Scores.DoesNotExist:
@@ -218,32 +218,22 @@ def addSnipe(winner, loser):
 
 
 def getLeaderboard():
-
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        rows = Scores.select(Scores.user_id, Scores.points, Scores.snipes, Scores.deaths).order_by(
+            Scores.points.desc(), Scores.snipes.desc(), Scores.deaths).limit(10).namedtuples().execute()
 
-            rows = conn.execute(
-                'SELECT UserID, Points, Snipes, Deaths FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10').fetchall()
-
-            return rows
-
-    except Exception as e:
-        print(e)
+        return rows
+    except:
         return False
 
 
 def getLeader():
-    try:
-        with sqlite3.connect(code.DATABASE) as conn:
+    leaderboard = getLeaderboard()
 
-            row = conn.execute(
-                'SELECT UserID FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 1').fetchone()
+    if not leaderboard or len(leaderboard) == 0:
+        return None
 
-            return row[0]
-
-    except Exception as e:
-        print(e)
-        return False
+    return leaderboard[0].user_id
 
 
 def update_scores_names(members):
@@ -267,42 +257,30 @@ def update_scores_names(members):
 
 def isImmune(userId):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        now = datetime.now().timestamp()
+        user = SnipingMods.get(userId)
 
-            now = datetime.now().timestamp()
-
-            immune = conn.execute(
-                'SELECT Immunity FROM SnipingMods WHERE UserID = ? and Immunity > ?', (userId, now)).fetchone()
-
-            conn.commit()
-
-            if immune is None:
-                return False
-
-        return True
-
+        return user.immunity > now
     except:
+        log.exception('Error checking for immunity for user_id: %s', userId)
         return False
 
 
 def get_multiplier(userId):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        now = datetime.now().timestamp()
 
-            now = datetime.now().timestamp()
+        SnipingMods.update(multiplier=None, multi_expiration=None).where(
+            (SnipingMods.multi_expiration == None) | (SnipingMods.multi_expiration < now)).execute()
 
-            conn.execute(
-                'UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE MultiExpiration < ?', (None, None, now))
-            multi = conn.execute(
-                'SELECT Multiplier FROM SnipingMods WHERE UserID = ? AND MultiExpiration > ?', (userId, now)).fetchone()
+        multi = SnipingMods.get(userId).multiplier
 
-            conn.commit()
+        if multi is None:
+            return 1
 
-            if multi is None:
-                return 1
-
-            return int(multi[0])
-
+        return multi
+    except SnipingMods.DoesNotExist:
+        return 1
     except:
         return -1
 
