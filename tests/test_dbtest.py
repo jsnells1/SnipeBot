@@ -114,7 +114,7 @@ def test_immune():
     assert Database.isImmune(3)
 
 
-def test_multiplier_killstreak():
+def test_multiplier():
     assert Database.get_multiplier(1) == 1
 
     SnipingMods.create(user_id=1, multiplier=3)
@@ -124,3 +124,30 @@ def test_multiplier_killstreak():
     assert Database.get_multiplier(1) == 1
     assert Database.get_multiplier(2) == 1
     assert Database.get_multiplier(3) == 3
+
+
+def test_killstreak():
+
+    assert Database.get_highest_killstreak() is None
+
+    Scores.create(user_id=1)
+    Scores.create(user_id=2, killstreak_record=3)
+
+    assert Scores.get(1).killstreak == 0
+
+    assert Database.update_killstreak(1, 5) == 5
+
+    assert Scores.get(1).killstreak == 5
+    assert Scores.get(1).killstreak_record == 5
+
+    user = Scores.get(1)
+    user.killstreak = 1
+    user.save()
+
+    assert Database.update_killstreak(1, 1) == 2
+    assert Scores.get(1).killstreak == 2
+    assert Scores.get(1).killstreak_record == 5
+
+    highest_killstreak = Database.get_highest_killstreak()
+    assert highest_killstreak.user_id == 1
+    assert highest_killstreak.killstreak_record == 5

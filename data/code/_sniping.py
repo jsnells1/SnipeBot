@@ -1,6 +1,7 @@
 import logging
 import sqlite3
 from datetime import datetime, timedelta
+from peewee import fn
 
 import discord
 
@@ -287,38 +288,31 @@ def get_multiplier(userId):
 
 def update_killstreak(userId, kills):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        user = Scores.get(userId)
+        user.killstreak += kills
+        user.killstreak_record = max(user.killstreak, user.killstreak_record)
+        user.save()
 
-            conn.execute(
-                'UPDATE Scores SET Killstreak = Killstreak + ?, KillstreakRecord = MAX(KillstreakRecord, Killstreak + ?) WHERE UserID = ?', (kills, kills, userId))
-
-            conn.commit()
-
-            killstreak = conn.execute(
-                'SELECT Killstreak FROM Scores WHERE UserID = ?', (userId,)).fetchone()
-
-            if killstreak is None:
-                return 0
-
-            return int(killstreak[0])
-
-    except Exception as e:
-        print(e)
+        return user.killstreak
+    except Scores.DoesNotExist:
+        return 0
+    except:
+        log.exception(
+            'Error updating killstreak for %s with %s kills', userId, kills)
         return False
 
 
 def get_highest_killstreak():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        # where(True) is unneeded but included for pylint to be happy
+        record = Scores.select(Scores.user_id, Scores.killstreak_record).where(
+            True).order_by(Scores.killstreak_record.desc()).namedtuples().limit(1).execute()
 
-            killstreak = conn.execute(
-                'SELECT UserID, KillstreakRecord FROM Scores ORDER BY KillstreakRecord DESC LIMIT 1').fetchone()
+        if len(record) == 0:
+            return None
 
-            if killstreak is None:
-                return None
+        return record[0]
 
-            return killstreak
-
-    except Exception as e:
-        print(e)
-        return False
+    except:
+        log.exception('Error getting highest killstreak')
+        return None
