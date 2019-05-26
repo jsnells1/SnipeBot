@@ -6,7 +6,7 @@ from peewee import fn
 import discord
 
 from data import code
-from data.models.data_models import *
+from data.models.data_models import Scores, SnipingMods, database
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ def registerUser(userId):
             log.info('User registered with ID: %s', userId)
 
             return True
-        except Exception as e:
+        except:
             log.exception('Error registering user_id: %s', userId)
             transaction.rollback()
             return False
