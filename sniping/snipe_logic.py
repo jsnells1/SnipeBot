@@ -78,8 +78,16 @@ def do_snipe(ctx, sniper, targets):
     return output
 
 
-async def get_leaderboard(ctx, rows, killstreakHolder, killstreakHiScore):
+async def get_leaderboard(ctx):
     outputRows = [['Name', 'P', 'S', 'D']]
+
+    rows = Database.getLeaderboard()
+    killstreakHiScore = Database.get_highest_killstreak()
+
+    if not rows or killstreakHiScore is None:
+        return 'Error retrieving leaderboard'
+
+    killstreakHolder = ctx.guild.get_member(killstreakHiScore.user_id)
 
     for row in rows:
         user = await commands.MemberConverter().convert(ctx, str(row.user_id))
@@ -90,7 +98,7 @@ async def get_leaderboard(ctx, rows, killstreakHolder, killstreakHiScore):
     records = [['Record', 'User', '']]
 
     records.append(
-        ['Streak', killstreakHolder.display_name[0:8], str(killstreakHiScore[1])])
+        ['Streak', killstreakHolder.display_name[0:8], str(killstreakHiScore.killstreak_record)])
 
     output = tabulate(records, headers='firstrow',
                       tablefmt='fancy_grid') + '\n\n'

@@ -154,18 +154,7 @@ class Snipes(commands.Cog):
     # Returns the current Leaderboard
     @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
-        rows = Database.getLeaderboard()
-        killstreakHiScore = Database.get_highest_killstreak()
-
-        if not rows or not killstreakHiScore:
-            await ctx.send('```Error retrieving leaderboard```')
-            return
-
-        killstreakHolder = ctx.guild.get_member(killstreakHiScore[0])
-
-        output = await get_leaderboard(
-            ctx, rows, killstreakHolder, killstreakHiScore)
-
+        output = await get_leaderboard(ctx)
         await ctx.send('```' + output + '```')
 
     # Adds are removes the user from the whitelist
