@@ -106,6 +106,7 @@ venv.bak/
 # Config (contains token)
 config.ini
 config.cfg
+config.py
 
 # log files
 **/log/

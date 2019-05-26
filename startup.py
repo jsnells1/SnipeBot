@@ -5,17 +5,13 @@ import logging.handlers
 import os
 import sys
 import traceback
-from datetime import datetime, timedelta
 
 import discord
 import discord.ext.commands as commands
 
-from cogs.admin import AdminCommands
-from cogs.snipe import Snipes
-from cogs.soapbox import Soapbox
-from cogs.club_calendar import ClubCalendar
+import config
+from bot import SnipeBot
 from data import api
-from data.api import Environment
 
 # Create log directory if it doesn't exist
 if not os.path.exists('./log'):
@@ -35,29 +31,15 @@ handler.setFormatter(logging.Formatter(
 log.addHandler(handler)
 
 # Read and Verify config
-config = configparser.ConfigParser()
-config.sections()
-
-config.read('config.cfg')
-
-if 'TOKEN' not in config or 'Token' not in config['TOKEN']:
-    log.fatal('Token not found in config file')
-    sys.exit('Token not found in config file')
-
-if 'SnipingExceptions' not in config:
-    log.fatal('SnipingExceptions not found in config file')
-    sys.exit('SnipingExceptions section not found in config file')
-
+CLUB_DAY = -1
+START_TIME = -1
+END_TIME = -1
 try:
-    day = int(config['SnipingExceptions']['ClubDay'])
-    start = int(config['SnipingExceptions']['ClubTimeStart'])
-    end = int(config['SnipingExceptions']['ClubTimeStop'])
+    CLUB_DAY = config.club_day
+    START_TIME = config.club_time_start
+    END_TIME = config.club_time_stop
 except:
-    log.fatal('Could not resolve club day, start, and/or stop in config')
-    sys.exit('Cannot resolve club day, start, and stop in config')
-
-TOKEN = str(config['TOKEN']['Token'])
-BOT_PREFIX = "!"
+    log.warning('Could not resolve club day, start, and/or stop in config')
 
 # Setup
 parser = argparse.ArgumentParser()
@@ -66,13 +48,14 @@ args = parser.parse_args()
 
 if args.env is not None:
     if args.env == 'dev':
-        api.switchDatabase(Environment.dev)
+        api.switchDatabase(api.Environment.dev)
     elif args.env == 'live':
-        api.switchDatabase(Environment.live)
+        api.switchDatabase(api.Environment.live)
 
 
-bot = commands.Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
-                   activity=discord.Activity(type=discord.ActivityType.listening, name='Logan\'s SI Session'))
+# region Initialize and Run bot
+
+bot = SnipeBot(CLUB_DAY, START_TIME, END_TIME)
 
 
 @bot.command(name='q2', hidden=True)
@@ -80,26 +63,6 @@ bot = commands.Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
 async def kill(ctx: commands.Context):
     await bot.logout()
 
+bot.run(config.token)
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        return
-
-    log.info("Error caused by message: `{}`".format(ctx.message.content))
-    log.info(''.join(traceback.format_exception_only(type(error), error)))
-
-    if isinstance(error, (commands.MissingPermissions, commands.CheckFailure)):
-        return await ctx.send('```You don\'t have permissions to use that command.```')
-
-
-@bot.event
-async def on_ready():
-    log.info('Bot started: Database: ' + api.DATABASE)
-    print('Ready. Database: ' + api.DATABASE)
-
-bot.add_cog(Soapbox(bot))
-bot.add_cog(Snipes(bot, day, start, end))
-bot.add_cog(AdminCommands(bot))
-bot.add_cog(ClubCalendar(bot))
-bot.run(TOKEN)
+# endregion Initialize and Run bot
