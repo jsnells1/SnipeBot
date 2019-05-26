@@ -117,8 +117,6 @@ def setDeaths(userId, amt):
         log.exception('Error setting deaths (%s) for user_id: %s', amt, userId)
         return False
 
-# endregion Inserting and Updating
-
 
 def getUserPoints(userId):
     try:
@@ -187,7 +185,7 @@ def getAllRespawns():
     except:
         return False
 
-
+#TODO Convert to peewee
 def addSnipe(winner, loser):
     try:
         with sqlite3.connect(code.DATABASE) as conn:
@@ -236,7 +234,7 @@ def getLeader():
 
     return leaderboard[0].user_id
 
-
+#TODO Convert to peewee
 def update_scores_names(members):
     try:
         params = [(member.display_name, member.id) for member in members]
