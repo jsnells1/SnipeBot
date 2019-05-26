@@ -5,7 +5,7 @@ from peewee import fn
 
 import discord
 
-from data import code
+from data import api
 from data.models.data_models import Scores, SnipingMods, database
 
 log = logging.getLogger(__name__)
@@ -134,14 +134,15 @@ def getUserPoints(userId):
 
 def isRespawning(userId):
     try:
-        query = Scores.select(Scores.respawn).where(
-            Scores.user_id == userId).limit(1).namedtuples()
+        user = Scores.get(user_id=userId)
 
-        if len(query) < 1:
+        if user.respawn is None:
             return False
 
-        return datetime.now().timestamp() < query[0].respawn
+        return datetime.now().timestamp() < user.respawn
 
+    except Scores.DoesNotExist:
+        return False
     except:
         log.exception('Error checking for respawn for user_id: %s', userId)
         return False
@@ -188,7 +189,7 @@ def getAllRespawns():
 #TODO Convert to peewee
 def addSnipe(winner, loser):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             c = conn.cursor()
 
             # Ensure both the sniper and snipee are inserted into the database
@@ -239,7 +240,7 @@ def update_scores_names(members):
     try:
         params = [(member.display_name, member.id) for member in members]
 
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
 
             conn.executemany('UPDATE SnipingMods SET Name = ? WHERE UserID = ?',
                              params)

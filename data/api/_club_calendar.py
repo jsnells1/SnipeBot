@@ -2,7 +2,7 @@ import logging
 import sqlite3
 from datetime import datetime, timedelta
 
-from data import code
+from data import api
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def _executeStmt_noReturn(cmds):
                 raise ValueError(
                     'Each command must be a tuple of size 2 with the string command and the parameter tuple')
 
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             for cmd in cmds:
                 stmt = cmd[0]
                 params = cmd[1]
@@ -44,7 +44,7 @@ def insert_event(date, description, repeating):
 def get_events(start, end):
 
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             conn.row_factory = sqlite3.Row
 
             r = conn.execute(

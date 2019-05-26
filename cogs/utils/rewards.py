@@ -1,7 +1,7 @@
 import random
 from datetime import datetime, timedelta
 
-from data import code as Database
+from data import api as Database
 
 # id 1
 

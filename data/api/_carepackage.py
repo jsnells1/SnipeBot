@@ -3,7 +3,7 @@ import sqlite3
 from datetime import datetime, timedelta
 
 from data.models.data_models import *
-from data import code
+from data import api
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def _executeStmt_noReturn(cmds):
                 raise ValueError(
                     'Each command must be a tuple of size 2 with the string command and the parameter tuple')
 
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             for cmd in cmds:
                 stmt = cmd[0]
                 params = cmd[1]
@@ -38,20 +38,20 @@ def _executeStmt_noReturn(cmds):
 # region Inserting and Updating
 
 
-def set_carepackage(keyword, expiration, hint):
+def set_carepackage(key, expiration, hint):
     try:
         carepackage = CarePackage(
-            key=keyword, expiration=expiration, hint=hint)
+            key=key, expiration=expiration, hint=hint)
         carepackage.save(force_insert=True)
         return True
     except:
-        log.exception('Error setting carepackage key=%s', keyword)
+        log.exception('Error setting carepackage key=%s', key)
         return False
 
 
 def reset_carepackage(key):
     try:
-        carepackage = CarePackage.get(key)
+        carepackage = CarePackage.get(key=key)
         carepackage.delete_instance()
         return True
     except:
@@ -87,7 +87,7 @@ def pass_potato(sender, receiver):
 
 def get_carepackage_hint():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
 
             row = conn.execute(
                 'SELECT Hint FROM CarePackage').fetchone()
@@ -114,7 +114,7 @@ def check_keyword(key):
 
 def remove_expired_carepackage():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
 
             now = datetime.now().timestamp()
 
@@ -138,7 +138,7 @@ def remove_expired_carepackage():
 
 def get_random_reward():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
 
             row = conn.execute(
                 'SELECT id, Name FROM CarePackageRwds ORDER BY RANDOM() LIMIT 1').fetchone()
@@ -152,7 +152,7 @@ def get_random_reward():
 
 def set_user_smokebomb(userId):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             conn.execute(
                 'INSERT or IGNORE INTO SnipingMods (UserID) VALUES (?)', (userId,))
 
@@ -170,7 +170,7 @@ def set_user_smokebomb(userId):
 
 def set_user_potato(userId, expiration):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             conn.execute(
                 'INSERT INTO HotPotato (Owner, Explosion) VALUES (?, ?)', (userId, expiration,))
 
@@ -185,7 +185,7 @@ def set_user_potato(userId, expiration):
 
 def has_potato(userId):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             hasPotato = conn.execute(
                 'SELECT * FROM HotPotato WHERE Owner = ?', (userId,)).fetchone()
 
@@ -201,7 +201,7 @@ def has_potato(userId):
 
 def has_smoke_bomb(userId):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             hasPotato = conn.execute(
                 'SELECT * FROM SnipingMods WHERE UserID = ? AND SmokeBomb = 1', (userId,)).fetchone()
 
@@ -217,7 +217,7 @@ def has_smoke_bomb(userId):
 
 def use_smoke_bomb(userId):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             conn.execute(
                 'UPDATE SnipingMods SET SmokeBomb = 0 WHERE UserID = ?', (userId,))
 
@@ -234,7 +234,7 @@ def use_smoke_bomb(userId):
 
 def check_exploded_potatoes():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             now = datetime.now().timestamp()
 
             pointDeduction = 3
@@ -262,7 +262,7 @@ def check_exploded_potatoes():
 
 def get_expired_immunes():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             now = datetime.now().timestamp()
 
             rows = conn.execute(
@@ -284,7 +284,7 @@ def get_expired_immunes():
 
 def get_rewards():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             rows = conn.execute(
                 'SELECT Name, Description FROM CarePackageRwds').fetchall()
 

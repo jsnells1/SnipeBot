@@ -4,7 +4,7 @@ from datetime import datetime
 import discord
 import discord.ext.commands as commands
 
-from data import code as Database
+from data import api as Database
 
 
 class ClubCalendar(commands.Cog):

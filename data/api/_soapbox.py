@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 
-from data import code
+from data import api
 
 log = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ def _executeStmt_noReturn(cmds):
                 raise ValueError(
                     'Each command must be a tuple of size 2 with the string command and the parameter tuple')
 
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             for cmd in cmds:
                 stmt = cmd[0]
                 params = cmd[1]
@@ -60,7 +60,7 @@ def updateSoapboxTopic(id, name, date, topic):
 
 def getSoapboxSchedule():
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             rows = conn.execute(
                 'SELECT * FROM Soapbox ORDER BY Date ASC').fetchall()
             conn.commit()
@@ -71,7 +71,7 @@ def getSoapboxSchedule():
 
 def getSoapboxEntry(id):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
+        with sqlite3.connect(api.DATABASE) as conn:
             row = conn.execute(
                 'SELECT * FROM Soapbox WHERE id = {}'.format(id))
 

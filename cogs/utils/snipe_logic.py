@@ -1,7 +1,7 @@
 from tabulate import tabulate
 from discord.ext import commands
 
-from data import code as Database
+from data import api as Database
 
 from cogs.utils.formatting import formatSnipeString
 

@@ -14,8 +14,8 @@ from cogs.admin import AdminCommands
 from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
 from cogs.club_calendar import ClubCalendar
-from data import code
-from data.code import Environment
+from data import api
+from data.api import Environment
 
 # Create log directory if it doesn't exist
 if not os.path.exists('./log'):
@@ -66,9 +66,9 @@ args = parser.parse_args()
 
 if args.env is not None:
     if args.env == 'dev':
-        code.switchDatabase(Environment.dev)
+        api.switchDatabase(Environment.dev)
     elif args.env == 'live':
-        code.switchDatabase(Environment.live)
+        api.switchDatabase(Environment.live)
 
 
 bot = commands.Bot(command_prefix=BOT_PREFIX, case_insensitive=True,
@@ -95,8 +95,8 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_ready():
-    log.info('Bot started: Database: ' + code.DATABASE)
-    print('Ready. Database: ' + code.DATABASE)
+    log.info('Bot started: Database: ' + api.DATABASE)
+    print('Ready. Database: ' + api.DATABASE)
 
 bot.add_cog(Soapbox(bot))
 bot.add_cog(Snipes(bot, day, start, end))

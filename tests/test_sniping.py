@@ -1,7 +1,7 @@
 import pytest
 from data.models.data_models import database, Calendar, CarePackage, CarePackageRwds, HotPotato, Scores, SnipingMods, Soapbox, SqliteSequence
 
-import data.code as Database
+import data.api as Database
 
 
 def teardown_function():

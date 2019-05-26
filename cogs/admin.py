@@ -4,8 +4,8 @@ import discord
 import discord.ext.commands as commands
 
 
-from data import code as Database
-from data.code import Environment
+from data import api as Database
+from data.api import Environment
 
 
 class AdminCommands(commands.Cog):
