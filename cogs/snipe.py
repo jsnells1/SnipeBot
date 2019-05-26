@@ -7,10 +7,11 @@ import discord
 import discord.ext.commands as commands
 from discord.ext import tasks
 
-import cogs.sniping.carepackage as CarePackage
+import cogs.utils.carepackage as CarePackage
+import cogs.utils.rewards as Rewards
 from data import code as Database
 
-from .snipe_logic import do_snipe, get_leaderboard
+from cogs.utils.snipe_logic import do_snipe, get_leaderboard
 
 log = logging.getLogger(__name__)
 
@@ -223,7 +224,7 @@ class Snipes(commands.Cog):
             return
 
         reward = Database.get_random_reward()
-        msg = CarePackage.get_reward(reward[0], ctx.author.id)
+        msg = Rewards.get_reward(reward[0], ctx.author.id)
 
         await ctx.send('{} guessed the keyword correctly! You open the care package and earn {}!'.format(ctx.author.display_name, msg))
 
@@ -232,7 +233,7 @@ class Snipes(commands.Cog):
     async def give_carepackage(self, ctx: commands.Context, member):
 
         reward = Database.get_random_reward()
-        msg = CarePackage.get_reward(reward[0], ctx.author.id)
+        msg = Rewards.get_reward(reward[0], ctx.author.id)
 
         await ctx.send('{} opens the care package and earn {}!'.format(member.display_name, msg))
 

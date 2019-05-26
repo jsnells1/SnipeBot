@@ -11,12 +11,11 @@ import discord
 import discord.ext.commands as commands
 
 from cogs.admin import AdminCommands
-from data import code
-from data.code import Environment
-from cogs.sniping.snipe import Snipes
+from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
 from cogs.club_calendar import ClubCalendar
-
+from data import code
+from data.code import Environment
 
 # Create log directory if it doesn't exist
 if not os.path.exists('./log'):

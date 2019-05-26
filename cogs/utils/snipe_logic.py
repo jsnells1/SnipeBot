@@ -3,7 +3,7 @@ from discord.ext import commands
 
 from data import code as Database
 
-from .formatting import formatSnipeString
+from cogs.utils.formatting import formatSnipeString
 
 
 def do_snipe(ctx, sniper, targets):
