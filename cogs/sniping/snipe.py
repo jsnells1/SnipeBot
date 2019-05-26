@@ -7,7 +7,7 @@ import discord
 import discord.ext.commands as commands
 from discord.ext import tasks
 
-import sniping.carepackage as CarePackage
+import cogs.sniping.carepackage as CarePackage
 from data import code as Database
 
 from .snipe_logic import do_snipe, get_leaderboard
@@ -216,14 +216,10 @@ class Snipes(commands.Cog):
             await ctx.send('Sorry, you can\'t claim the carepackage if you\'re dead!')
             return
 
-        success, msg = CarePackage.isKeyword(keyword)
+        success = CarePackage.isKeyword(keyword)
 
         if not success:
-            if msg is not None:
-                await ctx.send(msg)
-            else:
-                await ctx.send('Sorry {}, that is not the keyword.'.format(ctx.author.display_name))
-
+            await ctx.send('Sorry {}, that is not the keyword.'.format(ctx.author.display_name))
             return
 
         reward = Database.get_random_reward()

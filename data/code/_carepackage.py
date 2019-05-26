@@ -2,6 +2,7 @@ import logging
 import sqlite3
 from datetime import datetime, timedelta
 
+from data.models.data_models import *
 from data import code
 
 log = logging.getLogger(__name__)
@@ -38,18 +39,24 @@ def _executeStmt_noReturn(cmds):
 
 
 def set_carepackage(keyword, expiration, hint):
+    try:
+        carepackage = CarePackage(
+            key=keyword, expiration=expiration, hint=hint)
+        carepackage.save(force_insert=True)
+        return True
+    except:
+        log.exception('Error setting carepackage key=%s', keyword)
+        return False
 
-    commands = [('UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?',
-                 (keyword, expiration, hint,))]
 
-    return _executeStmt_noReturn(commands)
-
-
-def reset_carepackage():
-    commands = [
-        ('UPDATE CarePackage SET Key = ?, Expiration = ?, Hint = ?', (None, None, None,))]
-
-    return _executeStmt_noReturn(commands)
+def reset_carepackage(key):
+    try:
+        carepackage = CarePackage.get(key)
+        carepackage.delete_instance()
+        return True
+    except:
+        log.exception('Error resetting carepackage key=%s', key)
+        return False
 
 
 def set_user_multiplier(userId, multiplier):
@@ -74,7 +81,7 @@ def pass_potato(sender, receiver):
         ('UPDATE HotPotato SET Owner = ? WHERE Owner = ?', (receiver, sender,))]
 
     return _executeStmt_noReturn(commands)
-    
+
 # endregion Inserting and Updating
 
 
@@ -92,17 +99,16 @@ def get_carepackage_hint():
         return False
 
 
-def getKeyword():
+def check_keyword(key):
     try:
-        with sqlite3.connect(code.DATABASE) as conn:
-
-            row = conn.execute(
-                'SELECT Key FROM CarePackage').fetchone()
-
-            return row[0]
-
-    except Exception as e:
-        print(e)
+        CarePackage.get(key=key)
+        # If the previous call works, key exists, return true
+        return True
+    except CarePackage.DoesNotExist:
+        # Don't need to log invalid keys
+        return False
+    except:
+        log.exception('Error checking key: %s' , key)
         return False
 
 

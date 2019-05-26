@@ -10,12 +10,12 @@ from datetime import datetime, timedelta
 import discord
 import discord.ext.commands as commands
 
-from admin.admin import AdminCommands
+from cogs.admin.admin import AdminCommands
 from data import code
 from data.code import Environment
-from sniping.snipe import Snipes
-from soapbox.soapbox import Soapbox
-from club_calendar.club_calendar import ClubCalendar
+from cogs.sniping.snipe import Snipes
+from cogs.soapbox.soapbox import Soapbox
+from cogs.club_calendar.club_calendar import ClubCalendar
 
 
 # Create log directory if it doesn't exist

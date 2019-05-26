@@ -30,16 +30,9 @@ def get_hint():
 
 
 def isKeyword(keyword):
-    key = Database.getKeyword()
+    isKey = Database.check_keyword(keyword)
 
-    if key is None:
-        return False, 'There is no carepackage available.'
-
-    if not key:
-        return False, '```Error retrieving key.```'
-
-    if key.lower() == keyword.lower():
-        Database.reset_carepackage()
-        return True, None
-    else:
-        return False, None
+    if isKey:
+        Database.reset_carepackage(keyword)
+    
+    return isKey
