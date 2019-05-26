@@ -1,16 +1,7 @@
 import pytest
-# from peewee import SqliteDatabase
 from data.models.data_models import database, Calendar, CarePackage, CarePackageRwds, HotPotato, Scores, SnipingMods, Soapbox, SqliteSequence
 
 import data.code as Database
-
-OWNER_ID = 273946109896818701
-
-
-def setup_module(module):
-    database.init(':memory:')
-    database.create_tables([Calendar, CarePackage, CarePackageRwds,
-                            HotPotato, Scores, SnipingMods, Soapbox])
 
 
 def teardown_function():
