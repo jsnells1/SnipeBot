@@ -186,7 +186,9 @@ def getAllRespawns():
     except:
         return False
 
-#TODO Convert to peewee
+# TODO Convert to peewee
+
+
 def addSnipe(winner, loser):
     try:
         with sqlite3.connect(api.DATABASE) as conn:
@@ -235,19 +237,16 @@ def getLeader():
 
     return leaderboard[0].user_id
 
-#TODO Convert to peewee
+
 def update_scores_names(members):
     try:
         params = [(member.display_name, member.id) for member in members]
 
-        with sqlite3.connect(api.DATABASE) as conn:
-
-            conn.executemany('UPDATE SnipingMods SET Name = ? WHERE UserID = ?',
-                             params)
-            conn.executemany('UPDATE Scores SET Name = ? WHERE UserID = ?',
-                             params)
-
-            conn.commit()
+        for param in params:
+            Scores.update(name=param[0]).where(
+                Scores.user_id == param[1]).execute()
+            SnipingMods.update(name=param[0]).where(
+                SnipingMods.user_id == param[1]).execute()
 
         return True
 

@@ -1,10 +1,8 @@
 import argparse
-import configparser
 import logging
 import logging.handlers
 import os
 import sys
-import traceback
 
 import discord
 import discord.ext.commands as commands
@@ -56,12 +54,6 @@ if args.env is not None:
 # region Initialize and Run bot
 
 bot = SnipeBot(CLUB_DAY, START_TIME, END_TIME)
-
-
-@bot.command(name='q2', hidden=True)
-@commands.has_role(item='Dev Team')
-async def kill(ctx: commands.Context):
-    await bot.logout()
 
 bot.run(config.token)
 

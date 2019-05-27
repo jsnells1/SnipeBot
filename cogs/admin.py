@@ -3,14 +3,18 @@ import os
 import discord
 import discord.ext.commands as commands
 
-
 from data import api as Database
 from data.api import Environment
 
 
-class AdminCommands(commands.Cog):
+class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(name='q2', hidden=True)
+    @commands.has_role(item='Dev Team')
+    async def kill(self, ctx):
+        await self.bot.logout()
 
     @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
     @commands.has_role(item='Dev Team')
@@ -140,7 +144,7 @@ class AdminCommands(commands.Cog):
         healthStr = 'Tell the Indies that the Pi said hello.\n\n'
         heat = self.getCPUtemperature()
         healthStr += 'Temp: {}C | {:.2f}F\n'.format(heat,
-                                                9.0 / 5.0 * float(heat) + 32)
+                                                    9.0 / 5.0 * float(heat) + 32)
         healthStr += 'Free RAM: {}KB\n'.format(
             int(float(self.getRAMinfo()[1]) / 1024))
         healthStr += 'Current CPU Usage: {}%\n'.format(self.getCPUuse())
