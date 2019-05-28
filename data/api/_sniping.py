@@ -186,37 +186,35 @@ def getAllRespawns():
     except:
         return False
 
-# TODO Convert to peewee
-
 
 def addSnipe(winner, loser):
-    try:
-        with sqlite3.connect(api.DATABASE) as conn:
-            c = conn.cursor()
+    with database.atomic() as transaction:
+        try:
+            registerUser(winner)
+            registerUser(loser)
 
-            # Ensure both the sniper and snipee are inserted into the database
-            c.execute(
-                'INSERT OR IGNORE INTO Scores (UserID) VALUES ({}), ({})'.format(winner, loser))
+            sniper = Scores.get(winner)
+            sniper.snipes += 1
+            sniper.points += 1
+            sniper.respawn = None
+            sniper.save()
 
-            c.execute(
-                'INSERT OR IGNORE INTO SnipingMods (UserID) VALUES ({}), ({})'.format(winner, loser))
-
-            # For the sniper, add 1 to their snipes and points and remove their respawn
-            c.execute(
-                'UPDATE Scores SET Snipes = Snipes + 1, Points = Points + 1, Respawn = NULL WHERE UserID = {}'.format(winner))
-
-            # For the loser, add 1 to deaths, reset their killstreak, set their Respawn to 2 hours, and set the revenge id
             respawn = datetime.now() + timedelta(hours=2)
             revenge = datetime.now() + timedelta(hours=3, minutes=30)
-            c.execute('UPDATE Scores SET Deaths = Deaths + 1, Killstreak = 0, Respawn = ?, Revenge = ?, RevengeTime = ? WHERE UserID = ?',
-                      (respawn.timestamp(), winner, revenge.timestamp(), loser))
 
-            conn.commit()
+            victim = Scores.get(loser)
+            victim.deaths += 1
+            victim.killstreak = 0
+            victim.respawn = respawn.timestamp()
+            victim.revenge = winner
+            victim.revenge_time = revenge.timestamp()
+            victim.save()
 
-        return True
-
-    except:
-        return False
+            return True
+        except:
+            log.exception('Error registering snipe: %s -> %s', winner, loser)
+            transaction.rollback()
+            return False
 
 
 def getLeaderboard():

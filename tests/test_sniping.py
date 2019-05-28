@@ -142,3 +142,20 @@ def test_killstreak():
     highest_killstreak = Database.get_highest_killstreak()
     assert highest_killstreak.user_id == 1
     assert highest_killstreak.killstreak_record == 5
+
+
+def test_add_snipe():
+    assert Database.addSnipe(1, 2)
+
+    sniper = Scores.get(1)
+    victim = Scores.get(2)
+
+    assert sniper.snipes == 1
+    assert sniper.points == 1
+    assert sniper.respawn is None
+
+    assert victim.deaths == 1
+    assert victim.killstreak == 0
+    assert victim.respawn is not None
+    assert victim.revenge == 1
+    assert victim.revenge_time is not None
