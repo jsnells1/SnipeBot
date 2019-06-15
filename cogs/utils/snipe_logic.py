@@ -70,7 +70,7 @@ def do_snipe(ctx, sniper, targets):
 
     totalPoints = bonusPoints + len(hits)
 
-    revengeMember = commands.MemberConverter().convert(ctx, revengeId)
+    revengeMember = ctx.guild.get_member(revengeId)
 
     output = formatSnipeString(sniper=sniper, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
                                revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=multiplier)

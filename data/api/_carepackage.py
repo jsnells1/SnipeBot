@@ -1,8 +1,9 @@
+import aiosqlite
 import logging
 import sqlite3
 from datetime import datetime, timedelta
 
-from data.models.data_models import *
+from data.models.data_models import CarePackage
 from data import api
 
 log = logging.getLogger(__name__)
@@ -108,7 +109,7 @@ def check_keyword(key):
         # Don't need to log invalid keys
         return False
     except:
-        log.exception('Error checking key: %s' , key)
+        log.exception('Error checking key: %s', key)
         return False
 
 
@@ -232,54 +233,59 @@ def use_smoke_bomb(userId):
         return False
 
 
-def check_exploded_potatoes():
-    try:
-        with sqlite3.connect(api.DATABASE) as conn:
-            now = datetime.now().timestamp()
+async def check_exploded_potatoes():
+    pointDeduction = 3
+    now = datetime.now().timestamp()
 
-            pointDeduction = 3
+    async with aiosqlite.connect(api.DATABASE) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute('SELECT Guild, Owner FROM HotPotato WHERE Explosion < ?', (now,)) as cursor:
+            rows = await cursor.fetchall()
 
-            rows = conn.execute(
-                'SELECT Owner FROM HotPotato WHERE Explosion < ?', (now,)).fetchall()
+        for row in rows:
+            await db.execute('UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID =  ?', (pointDeduction, row['Owner'],))
 
-            rows = [row[0] for row in rows]
+        await db.execute('DELETE FROM HotPotato WHERE Explosion < ?', (now,))
 
-            for userId in rows:
-                conn.execute(
-                    'UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID = ?', (pointDeduction, userId,))
+        return rows
 
-            conn.execute(
-                'DELETE FROM HotPotato WHERE Explosion < ?', (now,))
+    # try:
+    #     with sqlite3.connect(api.DATABASE) as conn:
+    #         now = datetime.now().timestamp()
 
-            conn.commit()
+    #         pointDeduction = 3
 
-            return rows
+    #         rows = conn.execute(
+    #             'SELECT Owner FROM HotPotato WHERE Explosion < ?', (now,)).fetchall()
 
-    except Exception as e:
-        print(e)
-        return False
+    #         rows = [row[0] for row in rows]
+
+    #         for userId in rows:
+    #             conn.execute(
+    #                 'UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID = ?', (pointDeduction, userId,))
+
+    #         conn.execute(
+    #             'DELETE FROM HotPotato WHERE Explosion < ?', (now,))
+
+    #         conn.commit()
+
+    #         return rows
+
+    # except Exception as e:
+    #     print(e)
+    #     return False
 
 
-def get_expired_immunes():
-    try:
-        with sqlite3.connect(api.DATABASE) as conn:
-            now = datetime.now().timestamp()
+async def get_expired_immunes():
+    now = datetime.now().timestamp()
+    async with aiosqlite.connect(api.DATABASE) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute('SELECT Guild, UserID FROM SnipingMods WHERE Immunity < ?', (now,)) as cursor:
+            rows = await cursor.fetchall()
 
-            rows = conn.execute(
-                'SELECT UserID FROM SnipingMods WHERE Immunity < ?', (now,)).fetchall()
+        await db.execute('UPDATE SnipingMods SET Immunity = ? WHERE Immunity < ?', (None, now, ))
 
-            rows = [row[0] for row in rows]
-
-            conn.execute(
-                'UPDATE SnipingMods SET Immunity = ? WHERE Immunity < ?', (None, now, ))
-
-            conn.commit()
-
-            return rows
-
-    except Exception as e:
-        print(e)
-        return False
+        return rows
 
 
 def get_rewards():

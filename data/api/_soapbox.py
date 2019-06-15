@@ -1,83 +1,45 @@
 import logging
 import sqlite3
+import aiosqlite
+from datetime import datetime
 
 from data import api
 
 log = logging.getLogger(__name__)
 
 
-def _executeStmt_noReturn(cmds):
-    try:
-        # Input validation
-        for cmd in cmds:
-            if not isinstance(cmd, tuple) or len(cmd) != 2:
-                raise ValueError('cmds must be a list of tuples of size 2')
-
-            if not isinstance(cmd[0], str) or not isinstance(cmd[1], tuple):
-                raise ValueError(
-                    'Each command must be a tuple of size 2 with the string command and the parameter tuple')
-
-        with sqlite3.connect(api.DATABASE) as conn:
-            for cmd in cmds:
-                stmt = cmd[0]
-                params = cmd[1]
-
-                conn.execute(stmt, params)
-
-            conn.commit()
-
-        return True
-
-    except Exception as e:
-        log.critical('Error executing statement(s): %s', cmds, exc_info=e)
-        return False
-
-# region Inserting and Updating
+async def insert_soapbox(name, date: datetime, topic):
+    async with aiosqlite.connect(api.DATABASE) as db:
+        await db.execute('INSERT INTO Soapbox (Presenter, Topic, Date) VALUES (?, ?, ?)', (name, topic, date.timestamp()))
+        await db.commit()
 
 
-def createSoapbox(name, timestamp, topic):
-    commands = [
-        ('INSERT INTO Soapbox (Presenter, Topic, Date) VALUES (?, ?, ?)', (name, topic, timestamp))]
-
-    return _executeStmt_noReturn(commands)
-
-
-def deleteSoapboxEntry(id):
-    commands = [('DELETE FROM Soapbox WHERE id = ?', (id,))]
-
-    return _executeStmt_noReturn(commands)
+async def delete_soapbox(id):
+    async with aiosqlite.connect(api.DATABASE) as db:
+        await db.execute('DELETE FROM Soapbox WHERE id = ?', (id,))
+        await db.commit()
 
 
-def updateSoapboxTopic(id, name, date, topic):
-
-    commands = [('UPDATE Soapbox SET Presenter = ?, date = ?, topic = ? WHERE id = ?',
-                 (name, date, topic, id))]
-
-    return _executeStmt_noReturn(commands)
-
-# endregion Inserting and Updating
+async def update_soapbox(id, name, date, topic):
+    async with aiosqlite.connect(api.DATABASE) as db:
+        await db.execute('UPDATE Soapbox SET Presenter = ?, date = ?, topic = ? WHERE id = ?', (name, date, topic, id))
+        await db.commit()
 
 
-def getSoapboxSchedule():
-    try:
-        with sqlite3.connect(api.DATABASE) as conn:
-            rows = conn.execute(
-                'SELECT * FROM Soapbox ORDER BY Date ASC').fetchall()
-            conn.commit()
+async def get_schedule():
+    async with aiosqlite.connect(api.DATABASE) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute('SELECT * FROM Soapbox ORDER BY Date ASC') as cursor:
+            rows = await cursor.fetchall()
+
             return rows
-    except:
-        return False
 
 
-def getSoapboxEntry(id):
-    try:
-        with sqlite3.connect(api.DATABASE) as conn:
-            row = conn.execute(
-                'SELECT * FROM Soapbox WHERE id = {}'.format(id))
+async def get_soapbox(id):
+    async with aiosqlite.connect(api.DATABASE) as db:
 
-            info = list(map(lambda x: x[0], row.description))
-            row = row.fetchone()
+        db.row_factory = aiosqlite.Row
+        async with db.execute('SELECT * FROM Soapbox WHERE id = ?', (id,)) as cursor:
+            row = await cursor.fetchone()
 
-            return info, row
-    except:
-        return False
+            return row

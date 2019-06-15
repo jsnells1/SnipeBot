@@ -1,3 +1,5 @@
+import collections
+import time
 import asyncio
 import calendar
 import logging
@@ -6,6 +8,7 @@ from datetime import datetime
 import discord
 import discord.ext.commands as commands
 from discord.ext import tasks
+from discord import utils
 
 import cogs.utils.carepackage as CarePackage
 import cogs.utils.rewards as Rewards
@@ -15,6 +18,8 @@ from cogs.utils.snipe_logic import do_snipe, get_leaderboard
 
 log = logging.getLogger(__name__)
 
+
+# TODO Bot isn't ready when getting guilds... need to add a different way
 
 class Snipes(commands.Cog):
     def __init__(self, bot, day, begin, end):
@@ -35,22 +40,29 @@ class Snipes(commands.Cog):
 
         log.info('Whitelisted users: {}'.format(self.whitelist))
 
+    # TODO Remove time tracking and import
     @tasks.loop(minutes=1.0)
     async def maintenance(self):
+        t0 = time.time_ns()
         if Database.DATABASE == Database.DEV_DATABASE:
-            channel = self.test_channel
+            channel_name = 'snipebot-testing'
         else:
-            channel = self.snipe_channel
+            channel_name = 'snipebot'
 
-        respawns = Database.getAllRespawns()
-        Database.removeExpiredRevenges()
-        explosions = Database.check_exploded_potatoes()
-        expirations = Database.get_expired_immunes()
+        guilds = self.bot.guilds
 
-        expirations = [self.indies_guild.get_member(
-            user).display_name for user in expirations]
+        respawns = await Database.get_all_respawns()
+        Database.remove_expired_revenges()
+        explosions = await Database.check_exploded_potatoes()
+        expirations = await Database.get_expired_immunes()
 
-        if expirations and len(expirations) > 0:
+        message_dict = collections.defaultdict(list)
+
+        if len(expirations) > 0:
+            for key, value in expirations:
+                user = 
+
+                message_dict[key].append(value)
             await channel.send('```It\'s hunting season! Immunity has expired for: {}```'.format(', '.join(expirations)))
 
         explosions = [self.indies_guild.get_member(
@@ -63,11 +75,17 @@ class Snipes(commands.Cog):
             await channel.send('```A carepackage has expired without anyone claiming it. Better luck next time.```')
 
         if len(respawns) > 0:
+            respawns_dict = collections.defaultdict(list)
+            for key, value in respawns:
+                respawns_dict[key].append(value)
+
             users = []
             for user in respawns:
                 users.append(self.indies_guild.get_member(int(user)).nick)
 
             await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
+
+        print(time.time_ns() - t0)
 
     @maintenance.before_loop
     async def before_maintenance(self):
@@ -75,9 +93,9 @@ class Snipes(commands.Cog):
 
     # Returns a user's points or snipes
 
-    @commands.command(name='Points', brief='Returns the calling user\'s points (or snipes)',
+    @commands.command(brief='Returns the calling user\'s points (or snipes)',
                       help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
-    async def getPoints(self, ctx: commands.Context):
+    async def points(self, ctx: commands.Context):
         author = ctx.message.author
         points = Database.getUserPoints(author.id)
 
@@ -97,9 +115,11 @@ class Snipes(commands.Cog):
         await ctx.send("{} you have {} point(s)".format(author.mention, points))
 
     # region Register Snipes
-    @commands.command(name='Snipe', brief='Registers a snipe from the calling user to the mentioned user', usage='<@TargetUser>',
+    @commands.command(brief='Registers a snipe from the calling user to the mentioned user', usage='@TargetUser @TargetUser',
                       help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
-    async def snipeUser(self, ctx: commands.Context, *losers: discord.Member):
+    async def snipe(self, ctx: commands.Context):
+
+        targets = ctx.message.mentions
 
         if ctx.message.channel.id != self.snipe_channel_id and ctx.message.channel.id != self.test_channel_id:
             await ctx.send('Please use the snipebot channel for sniping :)')
@@ -111,49 +131,35 @@ class Snipes(commands.Cog):
             await ctx.send('```Sniping disabled during club hours: {} from {}:00 to {}:00 (Military Time)```'.format(calendar.day_name[self.club_day], self.club_start, self.club_end))
             return
 
-        if len(losers) == 0:
+        if len(targets) == 0:
             await ctx.send('To snipe a user, type !snipe <@Target>. You can snipe multiple users by typing !snipe <@Target1> <@Target2> etc..')
             return
 
-        if any(x.id == ctx.author.id for x in losers):
+        if any(x.id == ctx.author.id for x in targets):
             await ctx.send('Sorry, you cannot snipe yourself...')
             return
 
-        for loser in losers:
-            if loser.id in self.whitelist:
-                member = ctx.guild.get_member(loser.id)
+        for target in targets:
+            if target.id in self.whitelist:
+                member = ctx.guild.get_member(target.id)
                 await ctx.send('```{} has respectfully asked to be on the sniping whitelist. Please refrain from sniping them. Resubmit your snipe without that user.```'.format(member.display_name))
                 return
 
-        await ctx.message.add_reaction('🇫')
+        await ctx.message.add_reaction('\U0001f1eb')
 
-        await ctx.send(do_snipe(ctx, ctx.author, losers))
+        await ctx.send(do_snipe(ctx, ctx.author, targets))
 
-    @snipeUser.error
-    async def sniperUser_error(self, ctx, error):
-        if isinstance(error, commands.BadArgument):
-            error = 'Command failed(Bad Arguments): Please resubmit your snipe\n'
-            error += 'Ensure you write the command as !snipe @Target1 @Target2 etc..\n'
-            error += 'Be sure not to write any other text like: \n'
-            error += '\t!snipe @Justin Got you Justin!\n'
-            error += 'This will fail.'
-
-            await ctx.send('```' + error + '```')
-
-    @commands.command(name='admin_snipe', hidden=True)
+    @commands.command(hidden=True)
     @commands.has_role(item='Dev Team')
-    async def admin_snipe(self, ctx: commands.Context, *members: discord.Member):
-        if len(members) <= 1:
-            await ctx.send('```Need atleast 2 arguments.```')
-            return
+    async def admin_snipe(self, ctx: commands.Context, sniper: discord.Member, *targets: discord.Member):
+        if len(targets) == 0:
+            return await ctx.send('Missing atleast 1 target')
 
-        sniper = members[0]
-
-        await ctx.send(do_snipe(ctx, sniper, members[1:]))
+        await ctx.send(do_snipe(ctx, sniper, targets))
     # endregion
 
     # Returns the current Leaderboard
-    @commands.command(name='Leaderboard', brief='Returns the Top 10 users sorted by snipes')
+    @commands.command(brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
         output = await get_leaderboard(ctx)
         await ctx.send('```' + output + '```')

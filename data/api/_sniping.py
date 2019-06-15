@@ -1,3 +1,4 @@
+import aiosqlite
 import logging
 import sqlite3
 from datetime import datetime, timedelta
@@ -64,7 +65,7 @@ def resetRevenge(userId):
         return False
 
 
-def removeExpiredRevenges():
+def remove_expired_revenges():
     today = datetime.now().timestamp()
 
     try:
@@ -167,24 +168,16 @@ def getRevengeUser(userId):
         return None
 
 
-def getAllRespawns():
-    try:
+async def get_all_respawns():
+    async with aiosqlite.connect(api.DATABASE) as db:
         date = datetime.now().timestamp()
+        async with db.execute('SELECT Guild, UserID FROM Scores WHERE Respawn < ?', (date,)) as cursor:
+            rows = await cursor.fetchall()
 
-        respawns = Scores.select(Scores.user_id).where(
-            Scores.respawn < date).namedtuples().execute()
+            await db.execute('UPDATE Scores SET Respawn = ? WHERE Respawn < ?', (None, date))
+            await db.commit()
 
-        if len(respawns) == 0:
-            return []
-
-        respawns = [x.user_id for x in respawns]
-
-        Scores.update({Scores.respawn: None}).where(
-            Scores.respawn < date).execute()
-
-        return respawns
-    except:
-        return False
+            return rows
 
 
 def addSnipe(winner, loser):
