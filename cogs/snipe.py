@@ -1,5 +1,4 @@
 import collections
-import time
 import asyncio
 import calendar
 import logging
@@ -40,52 +39,71 @@ class Snipes(commands.Cog):
 
         log.info('Whitelisted users: {}'.format(self.whitelist))
 
-    # TODO Remove time tracking and import
+    # TODO TEST
     @tasks.loop(minutes=1.0)
     async def maintenance(self):
-        t0 = time.time_ns()
         if Database.DATABASE == Database.DEV_DATABASE:
             channel_name = 'snipebot-testing'
         else:
             channel_name = 'snipebot'
 
-        guilds = self.bot.guilds
-
-        respawns = await Database.get_all_respawns()
+        # Silently remove revenge targets that have expired
         Database.remove_expired_revenges()
+
+        # Get the list of respawns, spud explosions, immunity expiration, and carepackage expirations
+        respawns = await Database.get_all_respawns()
         explosions = await Database.check_exploded_potatoes()
         expirations = await Database.get_expired_immunes()
+        expired_carepackages = await Database.remove_expired_carepackage()
 
+        # Dictionary of guild_id, messages_to_send pairs
         message_dict = collections.defaultdict(list)
 
-        if len(expirations) > 0:
-            for key, value in expirations:
-                user = 
+        # TODO Verify guild and member are both found to avoid attribute error
 
-                message_dict[key].append(value)
-            await channel.send('```It\'s hunting season! Immunity has expired for: {}```'.format(', '.join(expirations)))
+        for guild_id, user_id in expirations:
+            guild = self.bot.get_guild(guild_id)
 
-        explosions = [self.indies_guild.get_member(
-            user).display_name for user in explosions]
+            if guild:
+                member = guild.get_member(user_id)
 
-        if explosions and len(explosions) > 0:
-            await channel.send('```BOOM! One or more potatoes exploded and the following players lost a life and 3 points: {}```'.format(', '.join(explosions)))
+                if member:
+                    message_dict[guild_id].append(f'Immunity has expired for {member.display_name}')
 
-        if Database.remove_expired_carepackage():
-            await channel.send('```A carepackage has expired without anyone claiming it. Better luck next time.```')
+        for guild_id, user_id in explosions:
+            guild = self.bot.get_guild(guild_id)
 
-        if len(respawns) > 0:
-            respawns_dict = collections.defaultdict(list)
-            for key, value in respawns:
-                respawns_dict[key].append(value)
+            if guild:
+                member = guild.get_member(user_id)
 
-            users = []
-            for user in respawns:
-                users.append(self.indies_guild.get_member(int(user)).nick)
+                if member:
+                    message_dict[guild_id].append(f'BOOM! A potatoe exploded and {member.display_name} lost a life and 3 points')
 
-            await channel.send('```The following user(s) have respawned: {}```'.format(', '.join(users)))
+        for guild_id, key in expired_carepackages:
+            message_dict[guild_id].append(f'A carepackage has expired without anyone claiming it. The key was: {key}')
 
-        print(time.time_ns() - t0)
+        respawns_dict = collections.defaultdict(list)
+
+        for guild_id, user_id in respawns:
+            guild = self.bot.get_guild(guild_id)
+
+            if guild:
+                member = guild.get_member(user_id)
+
+                if member:
+                    respawns_dict[guild_id].append(member.display_name)
+
+        for guild_id, user_list in respawns_dict.items():
+            message_dict[guild_id].append(f"The following user(s) have respawned: {', '.join(user_list)}")
+
+        for guild_id, message_list in message_dict.items():
+            guild = self.bot.get_guild(guild_id)
+
+            if guild:
+                channel = utils.get(guild.channels, name=channel_name)
+
+                if channel:
+                    await channel.send('\n'.join(message_list))
 
     @maintenance.before_loop
     async def before_maintenance(self):

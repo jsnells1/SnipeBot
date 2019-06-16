@@ -21,5 +21,8 @@
     ],
     "python.linting.pep8CategorySeverity.W": "Information",
     "python.linting.pep8CategorySeverity.E": "Information",
-    "python.testing.promptToConfigure": false
+    "python.testing.promptToConfigure": false,
+    "python.formatting.autopep8Args": [
+        "--max-line-length=500"
+    ]
 }
