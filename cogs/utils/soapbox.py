@@ -18,7 +18,7 @@ class SoapboxEntry:
         return f'id: {self.id}\nName: {self.name}\nDate: {date}\nTopic: {self.topic}'
 
     def __repr__(self):
-        return self.__str__()
+        return str(self)
 
     @classmethod
     def from_dict(cls, dictionary: dict):

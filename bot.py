@@ -34,7 +34,7 @@ class SnipeBot(commands.Bot):
         log.info(''.join(traceback.format_exception_only(type(error), error)))
 
         if isinstance(error, (commands.MissingPermissions, commands.CheckFailure)):
-            return await ctx.send('```You don\'t have permissions to use that command.```')
+            return await ctx.send(error)
         elif isinstance(error, commands.BadArgument):
             return await ctx.send(f'BadArgument: {error}')
         elif isinstance(error, commands.MissingRequiredArgument):

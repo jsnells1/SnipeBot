@@ -3,8 +3,9 @@ import logging
 import discord
 import discord.ext.commands as commands
 from discord.ext import tasks
+from discord import utils
 
-import cogs.utils.carepackage as utils
+import cogs.utils.carepackage as carepackage_utils
 import cogs.utils.rewards as Rewards
 from data import api as Database
 
@@ -16,9 +17,6 @@ log = logging.getLogger(__name__)
 class CarePackage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-        self.snipe_channel_id = 568115558206406656
-        self.snipe_channel = bot.get_channel(self.snipe_channel_id)
 
     @commands.command(name='smoke_bomb', hidden=True)
     async def use_smoke_bomb(self, ctx: commands.Context):
@@ -33,14 +31,13 @@ class CarePackage(commands.Cog):
     @commands.command(name='set_carepackage', hidden=True)
     @commands.has_role(item="Dev Team")
     async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint):
-        await ctx.send(utils.set_carepackage(keyword, time, hint))
+        await ctx.send(carepackage_utils.set_carepackage(keyword, time, hint))
 
     @commands.command(name='get_hint', hidden=True)
     async def get_carepackage_hint(self, ctx: commands.Context):
-        await ctx.send(utils.get_hint())
+        await ctx.send(carepackage_utils.get_hint())
 
-    @commands.command(name='get_rewards', hidden=True)
-    @commands.has_role(item="Dev Team")
+    @commands.command(name='get_rewards')
     async def get_carepackage_rewards(self, ctx: commands.Context):
         rewards = Database.get_rewards()
 
@@ -51,18 +48,28 @@ class CarePackage(commands.Cog):
 
         await ctx.send('```' + sendingStr + '```')
 
-    @commands.command(name='announce_carepackage', hidden=True)
+    @commands.command()
     @commands.has_role(item="Dev Team")
     async def announce_carepackage(self, ctx: commands.Context):
-        await self.snipe_channel.send('{} A carepackage is spawning soon!'.format(ctx.guild.default_role))
+        channel = await commands.TextChannelConverter().convert(ctx, 'snipebot')
 
-    @commands.command(name='guess', hidden=True)
-    async def guess_keyword(self, ctx: commands.Context, keyword):
+        if channel:
+            role = await commands.RoleConverter().convert(ctx, 'Sniper Team')
+
+            if role:
+                await channel.send(f'{role.mention} A carepackage is spawning soon!')
+            else:
+                await channel.send('This command requires a role "Sniper Team" to use.')
+        else:
+            await ctx.send('No channel named "SnipeBot" found')
+
+    @commands.command()
+    async def guess(self, ctx: commands.Context, keyword):
         if Database.isRespawning(ctx.author.id):
             await ctx.send('Sorry, you can\'t claim the carepackage if you\'re dead!')
             return
 
-        success = utils.isKeyword(keyword)
+        success = carepackage_utils.isKeyword(keyword)
 
         if not success:
             await ctx.send('Sorry {}, that is not the keyword.'.format(ctx.author.display_name))

@@ -119,18 +119,16 @@ def setDeaths(userId, amt):
         return False
 
 
-def getUserPoints(userId):
-    try:
-        query = Scores.select(Scores.points).where(
-            Scores.user_id == userId).limit(1).namedtuples()
+async def get_points(user_id):
+    async with aiosqlite.connect(api.DATABASE) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute('SELECT Points FROM Scores WHERE UserID == ?', (user_id,)) as cursor:
+            row = await cursor.fetchone()
 
-        if len(query) > 0:
-            return query[0].points
+            if row:
+                return row['Points']
 
-        return None
-    except:
-        log.exception('Error getting points for userid: %s', userId)
-        return None
+            return row
 
 
 def isRespawning(userId):

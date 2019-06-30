@@ -11,9 +11,9 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='q2', hidden=True)
+    @commands.command(hidden=True)
     @commands.has_role(item='Dev Team')
-    async def kill(self, ctx):
+    async def q2(self, ctx):
         await self.bot.logout()
 
     @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
@@ -106,7 +106,6 @@ class Admin(commands.Cog):
     @commands.command(name='switchDB', hidden=True)
     @commands.has_role(item="Dev Team")
     async def switchDB(self, ctx: commands.Context, env=None):
-
         if env is None:
             await ctx.send('Please pass the environment to switch to (live/dev)')
             return
@@ -127,10 +126,9 @@ class Admin(commands.Cog):
         else:
             await ctx.send('Error changing database.')
 
-    @commands.command(name='db_environment', hidden=True)
+    @commands.command(name='db_env', hidden=True)
     @commands.has_role(item='Dev Team')
-    async def getDBEnvironment(self, ctx: commands.Context, env=None):
-
+    async def db_environment(self, ctx: commands.Context, env=None):
         if Database.DATABASE == Database.DEV_DATABASE:
             await ctx.send('```Dev```')
         else:
@@ -198,7 +196,7 @@ class Admin(commands.Cog):
         else:
             await ctx.send('```Usernames failed to be updated.```')
 
-    @commands.command(name='assign_sniper_role')
+    @commands.command()
     @commands.has_role(item='Dev Team')
     async def assign_sniper_role(self, ctx: commands.Context):
         userIds = Database.getAllUsers()

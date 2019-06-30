@@ -5,55 +5,55 @@ from data import api as Database
 
 from cogs.utils.formatting import formatSnipeString
 
+from cogs.utils.sniper import Sniper
 
-def do_snipe(ctx, sniper, targets):
+
+# TODO Fix with new class
+async def do_snipe(ctx, sniper, targets):
     hits = []
     immune = []
     respawns = []
     errors = []
 
+    # Convert sniper to Sniper object
+    sniper = await Sniper.from_database(sniper.id, ctx.guild.id, sniper.display_name)
+
+    # Convert targets to list of Sniper objects, ignoring bots
+    targets = [await Sniper.from_database(target.id, ctx.guild.id, target.display_name) for target in targets if not target.bot]
+
     leaderId = Database.getLeader()
-    revengeId = Database.getRevengeUser(sniper.id)
-    multiplier = Database.get_multiplier(sniper.id)
 
     bonusPoints = 0
 
     leaderHit = False
     revengeHit = False
 
-    if multiplier == -1:
-        multiplier = 1
-
     for loser in targets:
 
-        # Ignore bots
-        if loser.bot:
-            continue
-
         # Ignore immune users
-        if Database.isImmune(loser.id):
+        if loser.is_immune():
             immune.append(loser.display_name)
             continue
 
         # Ignore respawning users
-        if Database.isRespawning(loser.id):
+        if loser.is_respawning():
             respawns.append(loser.display_name)
             continue
 
         # Try to register the snipe
-        if Database.addSnipe(sniper.id, loser.id):
+        if await sniper.add_snipe(loser):
             if loser.id == leaderId:
                 leaderHit = True
                 bonusPoints += 3
 
-            if loser.id == revengeId:
+            if loser.id == sniper.revenge:
                 revengeHit = True
                 bonusPoints += 2
                 Database.resetRevenge(sniper.id)
 
-            hits.append(loser.nick)
+            hits.append(loser.display_name)
         else:
-            errors.append(loser.nick)
+            errors.append(loser.display_name)
 
     killstreak = len(hits)
     hasPotato = False
@@ -63,17 +63,16 @@ def do_snipe(ctx, sniper, targets):
         if hasPotato:
             Database.pass_potato(sniper.id, hits[0])
 
-    bonusPoints = bonusPoints * multiplier + \
-        (len(hits) * multiplier - len(hits))
+    bonusPoints = (bonusPoints + len(hits)) * sniper.multiplier
 
     Database.addPoints(sniper.id, bonusPoints)
 
-    totalPoints = bonusPoints + len(hits)
+    totalPoints = bonusPoints
 
-    revengeMember = ctx.guild.get_member(revengeId)
+    revengeMember = ctx.guild.get_member(sniper.revenge)
 
     output = formatSnipeString(sniper=sniper, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
-                               revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=multiplier)
+                               revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=sniper.multiplier)
 
     return output
 
