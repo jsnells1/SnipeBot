@@ -13,7 +13,7 @@ import cogs.utils.carepackage as CarePackage
 import cogs.utils.rewards as Rewards
 from data import api as Database
 
-from cogs.utils.snipe_logic import do_snipe
+from cogs.utils.sniper import Sniper
 
 from cogs.utils.leaderboard import Leaderboard
 
@@ -129,7 +129,9 @@ class Snipes(commands.Cog):
         # Add 'F' emoji to the snipe
         await ctx.message.add_reaction('\U0001f1eb')
 
-        await ctx.send(await do_snipe(ctx, ctx.author, targets))
+        sniper = await Sniper.from_database(ctx.author.id, ctx.guild.id, ctx.author.display_name)
+
+        await ctx.send(await sniper.snipe(ctx, targets))
 
     @commands.command(hidden=True)
     @commands.has_role(item='Dev Team')
@@ -137,7 +139,9 @@ class Snipes(commands.Cog):
         if len(targets) == 0:
             return await ctx.send('Missing atleast 1 target')
 
-        await ctx.send(await do_snipe(ctx, sniper, targets))
+        sniper = await Sniper.from_database(sniper.id, ctx.guild.id, sniper.display_name)
+
+        await ctx.send(await sniper.snipe(ctx, targets))
     # endregion
 
     # Returns the current Leaderboard
