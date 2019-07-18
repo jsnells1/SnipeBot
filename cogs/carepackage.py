@@ -9,7 +9,7 @@ import cogs.utils.carepackage as carepackage_utils
 import cogs.utils.rewards as Rewards
 from data import api as Database
 
-from cogs.utils.snipe_logic import do_snipe, get_leaderboard
+from cogs.utils.snipe_logic import do_snipe
 
 log = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ import cogs.utils.carepackage as CarePackage
 import cogs.utils.rewards as Rewards
 from data import api as Database
 
-from cogs.utils.snipe_logic import do_snipe, get_leaderboard
+from cogs.utils.snipe_logic import do_snipe
 
 from cogs.utils.leaderboard import Leaderboard
 
@@ -99,18 +99,6 @@ class Snipes(commands.Cog):
     @maintenance.before_loop
     async def before_maintenance(self):
         await self.bot.wait_until_ready()
-
-    # Returns a user's points or snipes
-
-    @commands.command(brief='Returns the calling user\'s points (or snipes)',
-                      help='Returns the calling user\'s points (or snipes)\nIf the user doesn\'t exists, they will be prompted to register their account')
-    async def points(self, ctx: commands.Context):
-        points = await Database.get_points(ctx.author.id)
-
-        if not points:
-            await ctx.send('You have not yet been registered. Snipe or get sniped to be registered.')
-        else:
-            await ctx.send(f'{ctx.author.mention} you have {points} point(s)')
 
     # region Register Snipes
     @commands.command(brief='Registers a snipe from the calling user to the mentioned user', usage='@TargetUser @TargetUser',

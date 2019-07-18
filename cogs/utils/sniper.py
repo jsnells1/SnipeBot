@@ -109,6 +109,14 @@ class Sniper():
 
             await db.commit()
 
+    async def reset_revenge(self):
+        async with aiosqlite.connect(api.DATABASE) as db:
+            await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE UserID = ?', (None, None, self.id))
+            await db.commit()
+
+            self.revenge = None
+            self.revenge_time = None
+
     async def update_killstreak(self, kills):
         killstreak_record = max(self.killstreak + kills, self.killstreak_record)
         async with aiosqlite.connect(api.DATABASE) as db:

@@ -3,6 +3,8 @@ import os
 import discord
 import discord.ext.commands as commands
 
+from cogs.utils.sniper import Sniper
+
 from data import api as Database
 from data.api import Environment
 
@@ -46,14 +48,10 @@ class Admin(commands.Cog):
     @commands.command(name='RegisterUser', hidden=True)
     @commands.has_role(item='Dev Team')
     async def registerUser(self, ctx: commands.Context, user: discord.Member):
-        response = Database.registerUser(user.id)
+        user = Sniper.from_database(user.id, ctx.guild, user.display_name)
+        user.register_self()
 
-        msg = '```User succesfully added.```'
-
-        if not response:
-            msg = '```Potential Error - User could not be added.```'
-
-        await ctx.send(msg)
+        await ctx.send('```User succesfully added.```')
 
     @commands.command(name='SetSnipes', hidden=True)
     @commands.has_role(item='Dev Team')

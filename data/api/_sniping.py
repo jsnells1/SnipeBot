@@ -12,21 +12,6 @@ from data.models.data_models import Scores, SnipingMods, database
 log = logging.getLogger(__name__)
 
 
-def registerUser(userId):
-    with database.atomic() as transaction:
-        try:
-            Scores.insert(user_id=userId).on_conflict_ignore().execute()
-            SnipingMods.insert(user_id=userId).on_conflict_ignore().execute()
-
-            log.info('User registered with ID: %s', userId)
-
-            return True
-        except:
-            log.exception('Error registering user_id: %s', userId)
-            transaction.rollback()
-            return False
-
-
 def removeUser(userId):
     try:
         user = Scores.get(userId)
@@ -50,18 +35,6 @@ def removeUser(userId):
         return True
     except:
         log.exception('Error removing user_id: %s', userId)
-        return False
-
-
-def resetRevenge(userId):
-    try:
-        Scores.get(userId).update(revenge=None, revenge_time=None).execute()
-        log.info('Revenge reset for: %s', userId)
-        return True
-    except Scores.DoesNotExist:
-        return True
-    except:
-        log.exception('Error resetting revenge for user_id: %s', userId)
         return False
 
 
@@ -119,18 +92,6 @@ def setDeaths(userId, amt):
         return False
 
 
-async def get_points(user_id):
-    async with aiosqlite.connect(api.DATABASE) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute('SELECT Points FROM Scores WHERE UserID == ?', (user_id,)) as cursor:
-            row = await cursor.fetchone()
-
-            if row:
-                return row['Points']
-
-            return row
-
-
 def isRespawning(userId):
     try:
         user = Scores.get(user_id=userId)
@@ -156,16 +117,6 @@ def getAllUsers():
         return []
 
 
-def getRevengeUser(userId):
-    try:
-        return Scores.get(userId).revenge
-    except Scores.DoesNotExist:
-        return None
-    except:
-        log.exception('Error getting revenge user for user_id: %s', userId)
-        return None
-
-
 async def get_all_respawns():
     async with aiosqlite.connect(api.DATABASE) as db:
         date = datetime.now().timestamp()
@@ -176,55 +127,6 @@ async def get_all_respawns():
             await db.commit()
 
             return rows
-
-
-def addSnipe(winner, loser):
-    with database.atomic() as transaction:
-        try:
-            registerUser(winner)
-            registerUser(loser)
-
-            sniper = Scores.get(winner)
-            sniper.snipes += 1
-            sniper.points += 1
-            sniper.respawn = None
-            sniper.save()
-
-            respawn = datetime.now() + timedelta(hours=2)
-            revenge = datetime.now() + timedelta(hours=3, minutes=30)
-
-            victim = Scores.get(loser)
-            victim.deaths += 1
-            victim.killstreak = 0
-            victim.respawn = respawn.timestamp()
-            victim.revenge = winner
-            victim.revenge_time = revenge.timestamp()
-            victim.save()
-
-            return True
-        except:
-            log.exception('Error registering snipe: %s -> %s', winner, loser)
-            transaction.rollback()
-            return False
-
-
-def getLeaderboard():
-    try:
-        rows = Scores.select(Scores.user_id, Scores.points, Scores.snipes, Scores.deaths).order_by(
-            Scores.points.desc(), Scores.snipes.desc(), Scores.deaths).limit(10).namedtuples().execute()
-
-        return rows
-    except:
-        return False
-
-
-def getLeader():
-    leaderboard = getLeaderboard()
-
-    if not leaderboard or len(leaderboard) == 0:
-        return None
-
-    return leaderboard[0].user_id
 
 
 def update_scores_names(members):
@@ -241,49 +143,3 @@ def update_scores_names(members):
 
     except:
         return False
-
-
-def isImmune(userId):
-    try:
-        now = datetime.now().timestamp()
-        user = SnipingMods.get(userId)
-
-        return user.immunity > now
-    except:
-        log.exception('Error checking for immunity for user_id: %s', userId)
-        return False
-
-
-def get_multiplier(userId):
-    try:
-        now = datetime.now().timestamp()
-
-        SnipingMods.update(multiplier=None, multi_expiration=None).where(
-            (SnipingMods.multi_expiration == None) | (SnipingMods.multi_expiration < now)).execute()
-
-        multi = SnipingMods.get(userId).multiplier
-
-        if multi is None:
-            return 1
-
-        return multi
-    except SnipingMods.DoesNotExist:
-        return 1
-    except:
-        return -1
-
-
-def get_highest_killstreak():
-    try:
-        # where(True) is unneeded but included for pylint to be happy
-        record = Scores.select(Scores.user_id, Scores.killstreak_record).where(
-            True).order_by(Scores.killstreak_record.desc()).namedtuples().limit(1).execute()
-
-        if len(record) == 0:
-            return None
-
-        return record[0]
-
-    except:
-        log.exception('Error getting highest killstreak')
-        return None

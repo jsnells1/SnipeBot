@@ -6,6 +6,7 @@ from data import api as Database
 from cogs.utils.formatting import formatSnipeString
 
 from cogs.utils.sniper import Sniper
+from cogs.utils.leaderboard import Leaderboard
 
 # TODO Test, implementation seems done
 
@@ -22,7 +23,11 @@ async def do_snipe(ctx, sniper, targets):
     # Convert targets to list of Sniper objects, ignoring bots
     targets = [await Sniper.from_database(target.id, ctx.guild.id, target.display_name) for target in targets if not target.bot]
 
-    leaderId = Database.getLeader()
+    leaderboard = await Leaderboard(ctx).get_rows()
+
+    leader_id = None
+    if len(leaderboard) > 0:
+        leader_id = leaderboard[0]['UserID']
 
     bonusPoints = 0
 
@@ -43,14 +48,14 @@ async def do_snipe(ctx, sniper, targets):
 
         # Try to register the snipe
         if await sniper.add_snipe(loser):
-            if loser.id == leaderId:
+            if loser.id == leader_id:
                 leaderHit = True
                 bonusPoints += 3
 
             if loser.id == sniper.revenge:
                 revengeHit = True
                 bonusPoints += 2
-                Database.resetRevenge(sniper.id)
+                await sniper.reset_revenge()
 
             hits.append(loser)
         else:
