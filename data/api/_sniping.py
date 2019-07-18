@@ -273,22 +273,6 @@ def get_multiplier(userId):
         return -1
 
 
-def update_killstreak(userId, kills):
-    try:
-        user = Scores.get(userId)
-        user.killstreak += kills
-        user.killstreak_record = max(user.killstreak, user.killstreak_record)
-        user.save()
-
-        return user.killstreak
-    except Scores.DoesNotExist:
-        return 0
-    except:
-        log.exception(
-            'Error updating killstreak for %s with %s kills', userId, kills)
-        return False
-
-
 def get_highest_killstreak():
     try:
         # where(True) is unneeded but included for pylint to be happy

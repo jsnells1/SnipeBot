@@ -15,6 +15,8 @@ from data import api as Database
 
 from cogs.utils.snipe_logic import do_snipe, get_leaderboard
 
+from cogs.utils.leaderboard import Leaderboard
+
 log = logging.getLogger(__name__)
 
 
@@ -31,7 +33,6 @@ class Snipes(commands.Cog):
 
         log.info('Whitelisted users: {}'.format(self.whitelist))
 
-    # TODO TEST
     @tasks.loop(minutes=1.0)
     async def maintenance(self):
         if Database.DATABASE == Database.DEV_DATABASE:
@@ -154,7 +155,7 @@ class Snipes(commands.Cog):
     # Returns the current Leaderboard
     @commands.command(brief='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
-        output = await get_leaderboard(ctx)
+        output = await Leaderboard(ctx).get_leaderboard()
         await ctx.send(f'```{output}```')
 
     # Adds are removes the user from the whitelist
