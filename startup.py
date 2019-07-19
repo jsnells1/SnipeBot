@@ -4,9 +4,6 @@ import logging.handlers
 import os
 import sys
 
-import discord
-import discord.ext.commands as commands
-
 import config
 from bot import SnipeBot
 from data import api

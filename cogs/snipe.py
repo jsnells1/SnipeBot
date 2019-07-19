@@ -1,21 +1,16 @@
-import collections
-import asyncio
 import calendar
+import collections
 import logging
 from datetime import datetime
 
 import discord
 import discord.ext.commands as commands
-from discord.ext import tasks
 from discord import utils
-
-import cogs.utils.carepackage as CarePackage
-import cogs.utils.rewards as Rewards
-from data import api as Database
-
-from cogs.utils.sniper import Sniper
+from discord.ext import tasks
 
 from cogs.utils.leaderboard import Leaderboard
+from cogs.utils.sniper import Sniper
+from data import api as Database
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +26,7 @@ class Snipes(commands.Cog):
         with open('whitelist', 'r') as f:
             self.whitelist = [int(line.rstrip('\n')) for line in f]
 
-        log.info('Whitelisted users: {}'.format(self.whitelist))
+        log.info(f'Whitelisted users: {self.whitelist}')
 
     @tasks.loop(minutes=1.0)
     async def maintenance(self):

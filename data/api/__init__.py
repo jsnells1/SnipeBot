@@ -1,7 +1,6 @@
 from enum import Enum
 
 from ._sniping import *
-from ._soapbox import *
 from ._carepackage import *
 from ._club_calendar import *
 

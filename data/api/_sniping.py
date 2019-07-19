@@ -1,13 +1,11 @@
 import aiosqlite
 import logging
-import sqlite3
-from datetime import datetime, timedelta
-from peewee import fn
 
-import discord
+from datetime import datetime
+
+from data.models.data_models import Scores, SnipingMods
 
 from data import api
-from data.models.data_models import Scores, SnipingMods, database
 
 log = logging.getLogger(__name__)
 
@@ -89,22 +87,6 @@ def setDeaths(userId, amt):
         return True
     except:
         log.exception('Error setting deaths (%s) for user_id: %s', amt, userId)
-        return False
-
-
-def isRespawning(userId):
-    try:
-        user = Scores.get(user_id=userId)
-
-        if user.respawn is None:
-            return False
-
-        return datetime.now().timestamp() < user.respawn
-
-    except Scores.DoesNotExist:
-        return False
-    except:
-        log.exception('Error checking for respawn for user_id: %s', userId)
         return False
 
 

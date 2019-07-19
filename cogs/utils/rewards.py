@@ -1,4 +1,3 @@
-import random
 from datetime import datetime, timedelta
 
 from data import api as Database

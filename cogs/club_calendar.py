@@ -1,7 +1,6 @@
 import calendar
 from datetime import datetime
 
-import discord
 import discord.ext.commands as commands
 
 from data import api as Database

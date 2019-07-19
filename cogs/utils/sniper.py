@@ -120,15 +120,11 @@ class Sniper():
             self.revenge = None
             self.revenge_time = None
 
-    # TODO Implement
     async def snipe(self, ctx, targets):
         hits = []
         immune = []
         respawns = []
         errors = []
-
-        # Convert sniper to Sniper object
-        # sniper = await Sniper.from_database(sniper.id, ctx.guild.id, sniper.display_name)
 
         # Convert targets to list of Sniper objects, ignoring bots
         targets = [await Sniper.from_database(target.id, ctx.guild.id, target.display_name) for target in targets if not target.bot]

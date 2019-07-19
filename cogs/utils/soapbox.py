@@ -1,18 +1,18 @@
 import aiosqlite
 from datetime import datetime
 
-import data.api._soapbox as soapbox
+import data.api as Database
 
 
 class SoapboxEntry:
-    def __init__(self, id=None, name=None, date=None, topic=None):
+    def __init__(self, id=None, guild=None, name=None, date=None, topic=None):
         self.id = id
+        self.guild = guild
         self.name = name
         self.date = date
         self.topic = topic
 
     def __str__(self):
-
         date = self.date.strftime('%m/%d')
 
         return f'id: {self.id}\nName: {self.name}\nDate: {date}\nTopic: {self.topic}'
@@ -34,20 +34,27 @@ class SoapboxEntry:
         instance = cls()
         instance.id = id
 
-        row = await soapbox.get_soapbox(id)
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute('SELECT * FROM Soapbox WHERE id = ?', (id,)) as cursor:
+                row = await cursor.fetchone()
 
         if row is None:
-            raise LookupError(f'Soapbox not found with id={id}')
+            return None
 
         instance.name = row['Presenter']
         instance.date = datetime.fromtimestamp(row['Date'])
         instance.topic = row['Topic']
+        instance.guild = row['Guild']
 
         return instance
 
     @classmethod
-    async def get_all(cls):
-        rows = await soapbox.get_schedule()
+    async def get_all(cls, guild):
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute('SELECT * FROM Soapbox WHERE Guild = ? ORDER BY Date ASC', (guild,)) as cursor:
+                rows = await cursor.fetchall()
 
         soapbox_entries = []
 
@@ -65,10 +72,16 @@ class SoapboxEntry:
         self.topic = self.topic if soapbox.topic is None else soapbox.topic
 
     async def commit_update(self):
-        await soapbox.update_soapbox(self.id, self.name, self.date.timestamp(), self.topic)
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            await db.execute('UPDATE Soapbox SET Presenter = ?, date = ?, topic = ? WHERE id = ? AND Guild = ?', (self.name, self.date.timestamp(), self.topic, self.id, self.guild))
+            await db.commit()
 
     async def commit_delete(self):
-        await soapbox.delete_soapbox(self.id)
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            await db.execute('DELETE FROM Soapbox WHERE id = ?', (self.id,))
+            await db.commit()
 
     async def commit_new(self):
-        await soapbox.insert_soapbox(self.name, self.date, self.topic)
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            await db.execute('INSERT INTO Soapbox (Guild, Presenter, Topic, Date) VALUES (?, ?, ?, ?)', (self.guild, self.name, self.topic, self.date.timestamp()))
+            await db.commit()

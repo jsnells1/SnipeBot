@@ -1,12 +1,10 @@
 import logging
 
-import discord
 import discord.ext.commands as commands
-from discord.ext import tasks
-from discord import utils
 
 import cogs.utils.carepackage as carepackage_utils
 import cogs.utils.rewards as Rewards
+from cogs.utils.sniper import Sniper
 from data import api as Database
 
 log = logging.getLogger(__name__)
@@ -63,7 +61,9 @@ class CarePackage(commands.Cog):
 
     @commands.command()
     async def guess(self, ctx: commands.Context, keyword):
-        if Database.isRespawning(ctx.author.id):
+        guesser = await Sniper.from_database(ctx.author.id, ctx.guild.id, ctx.author.name)
+
+        if guesser.is_respawning():
             await ctx.send('Sorry, you can\'t claim the carepackage if you\'re dead!')
             return
 

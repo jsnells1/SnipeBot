@@ -34,5 +34,5 @@ def isKeyword(keyword):
 
     if isKey:
         Database.reset_carepackage(keyword)
-    
+
     return isKey

@@ -6,8 +6,6 @@ import discord.ext.commands as commands
 from tabulate import tabulate
 
 from cogs.utils.soapbox import SoapboxEntry
-from data import api as Database
-from data.api import Environment
 
 # TODO Fix help info
 
@@ -42,7 +40,7 @@ class Soapbox(commands.Cog):
     @soapbox.command(name='schedule', brief="Returns the current soapbox schedule")
     async def soapbox_schedule(self, ctx: commands.Context):
 
-        entries = await SoapboxEntry.get_all()
+        entries = await SoapboxEntry.get_all(ctx.guild.id)
         table_rows = [['ID', 'Name', 'Date', 'Topic']]
 
         for entry in entries:
@@ -70,7 +68,7 @@ class Soapbox(commands.Cog):
         except ValueError:
             return await ctx.send('```Cannot create soapbox: Date should be in the format of Month/Day\nExample:\n\t4/11```')
 
-        new_soapbox = SoapboxEntry(name=name, date=parsed_date, topic=topic)
+        new_soapbox = SoapboxEntry(name=name, date=parsed_date, topic=topic, guild=ctx.guild.id)
         await new_soapbox.commit_new()
 
         await ctx.send('Soapbox created!')
@@ -82,6 +80,9 @@ class Soapbox(commands.Cog):
 
         soapbox_entry = await SoapboxEntry.from_database(id)
 
+        if soapbox_entry is None or soapbox_entry.guild != ctx.guild.id:
+            return await ctx.send('Soapbox not found.')
+
         await ctx.send(f'```{soapbox_entry}```\nAre you sure you want to delete this record? (Y/N)')
 
         def check(m):
@@ -92,7 +93,7 @@ class Soapbox(commands.Cog):
         except asyncio.TimeoutError:
             return await ctx.send("Timeout reached. Operation aborted")
 
-        if response.lower() == 'y':
+        if response.content.lower() == 'y':
             await soapbox_entry.commit_delete()
             await ctx.send('Record deleted \U0001F44D')
         else:
@@ -102,11 +103,10 @@ class Soapbox(commands.Cog):
                      help='Updates the specified entry given the row id. The entry is updated using the supplied Name, Date, and Topic')
     @commands.has_role("Dev Team")
     async def soapbox_update(self, ctx: commands.Context, id: int, *args):
+        soapbox_to_update = await SoapboxEntry.from_database(id)
 
-        try:
-            soapbox_to_update = await SoapboxEntry.from_database(id)
-        except LookupError as e:
-            return await ctx.send(e)
+        if soapbox_to_update is None or soapbox_to_update.guild != ctx.guild.id:
+            return await ctx.send('Soapbox not found.')
 
         updates = {
             'name': None,
