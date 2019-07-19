@@ -2,7 +2,6 @@ from enum import Enum
 
 from ._sniping import *
 from ._carepackage import *
-from ._club_calendar import *
 
 from data.models.data_models import database
 

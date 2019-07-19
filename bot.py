@@ -6,7 +6,6 @@ import discord.ext.commands as commands
 
 from cogs.admin import Admin
 from cogs.carepackage import CarePackage
-from cogs.club_calendar import ClubCalendar
 from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
 from data import api
@@ -23,7 +22,6 @@ class SnipeBot(commands.Bot):
         self.add_cog(Soapbox(self))
         self.add_cog(Snipes(self, day, start, end))
         self.add_cog(Admin(self))
-        self.add_cog(ClubCalendar(self))
         self.add_cog(CarePackage(self))
 
     async def on_command_error(self, ctx, error):
