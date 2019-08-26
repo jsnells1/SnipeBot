@@ -7,8 +7,6 @@ from tabulate import tabulate
 
 from cogs.utils.soapbox import SoapboxEntry
 
-# TODO Fix help info
-
 
 class Soapbox(commands.Cog):
     def __init__(self, bot):

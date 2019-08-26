@@ -1,38 +1,44 @@
-from datetime import datetime
+import aiosqlite
 
 from data import api as Database
 
 
-def set_carepackage(keyword, time, hint):
-    try:
-        expiration = datetime.strptime(time, '%m/%d/%y %H:%M')
-    except Exception as e:
-        return str(e)
+class Package():
+    def __init__(self, guild, keyword, expiration, hint):
+        self.guild = guild
+        self.expiration = expiration
+        self.keyword = keyword
+        self.hint = hint
 
-    response = Database.set_carepackage(keyword, expiration.timestamp(), hint)
+    @classmethod
+    async def get_all(cls, guild):
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            db.row_factory = aiosqlite.Row
 
-    if not response:
-        return '```Care Package failed to be set```'
+            async with db.execute('SELECT * FROM CarePackage WHERE Guild = ?', (guild,)) as cursor:
+                rows = await cursor.fetchall()
+                carepackages = [Package(row['Guild'], row['Key'], row['Expiration'], row['Hint']) for row in rows]
 
-    return '```Care Package set, Expires at {}```'.format(expiration)
+                return carepackages
 
+    @classmethod
+    async def is_keyword(cls, guess, guild):
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            async with db.execute('SELECT 1 FROM CarePackage WHERE Key = ? AND Guild = ?', (guess, guild)) as cursor:
+                row = await cursor.fetchone()
 
-def get_hint():
-    hint = Database.get_carepackage_hint()
+                if row is None:
+                    return False
 
-    if hint is None:
-        return 'There is no hint available.'
+                await db.execute('DELETE FROM CarePackage WHERE Key = ? AND Guild = ?', (guess, guild))
+                await db.commit()
 
-    if not hint:
-        return '```Error retrieving hint.```'
+                return True
 
-    return 'The hint is: ' + str(hint)
+    async def save(self):
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            await db.execute('INSERT INTO CarePackage (Guild, Key, Expiration, Hint) VALUES (?,?,?,?)', (self.guild, self.keyword, self.expiration, self.hint))
+            await db.commit()
 
-
-def isKeyword(keyword):
-    isKey = Database.check_keyword(keyword)
-
-    if isKey:
-        Database.reset_carepackage(keyword)
-
-    return isKey
+    def get_hint(self):
+        return self.hint or 'There is no hint available.'

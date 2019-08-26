@@ -21,37 +21,38 @@ class Admin(commands.Cog):
     @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
     @commands.has_role(item='Dev Team')
     async def removeUser(self, ctx: commands.Context, member: discord.Member):
-        await ctx.send('Are you sure you want to remove user: {} (Y/N)'.format(member.nick))
+        if not await Sniper.exists(member.id, member.guild.id):
+            await ctx.send('User is not registered.')
+
+        await ctx.send(f'Are you sure you want to remove user: {member.display_name} (Y/N)')
 
         author = ctx.message.author
         channel = ctx.message.channel
 
         def check(m):
-            return (m.content == 'Y' or m.content == 'N' or m.content == 'n' or m.content == 'y') and m.channel == channel and m.author.id == author.id
+            return (m.content in ('y', 'Y', 'n', 'N')) and m.channel == channel and m.author.id == author.id
 
         try:
             response = await self.bot.wait_for('message', check=check, timeout=10)
         except:
-            await ctx.send("```Timeout reached. User lived to fight another day.```")
+            await ctx.send('Timeout reached. User lived to fight another day.')
             return
 
         if response.content == 'Y' or response.content == 'y':
-            success = Database.removeUser(member.id)
-
-            if success:
-                await ctx.send('```User removed.```')
-            else:
-                await ctx.send('```Error: User failed to be removed.```')
+            try:
+                await Sniper.remove_user(member.id, member.guild.id)
+                await ctx.send('User removed.')
+            except:
+                await ctx.send('Error: User failed to be removed.')
         else:
-            await ctx.send('```User lives to fight another day.```')
+            await ctx.send('User lives to fight another day.')
 
     @commands.command(name='RegisterUser', hidden=True)
     @commands.has_role(item='Dev Team')
     async def registerUser(self, ctx: commands.Context, user: discord.Member):
-        user = Sniper.from_database(user.id, ctx.guild, user.display_name)
-        user.register_self()
+        user = await Sniper.from_database(user.id, ctx.guild, user.display_name, register=True)
 
-        await ctx.send('```User succesfully added.```')
+        await ctx.send('User succesfully added.')
 
     @commands.command(name='SetSnipes', hidden=True)
     @commands.has_role(item='Dev Team')
@@ -158,12 +159,10 @@ class Admin(commands.Cog):
     # Index 2: free RAM
     def getRAMinfo(self):
         p = os.popen('free')
-        i = 0
-        while 1:
-            i = i + 1
-            line = p.readline()
-            if i == 2:
-                return(line.split()[1:4])
+        p.readline()
+
+        line = p.readline()
+        return line.split()[1:4]
 
     # Return % of CPU used by user as a character string
     def getCPUuse(self):
@@ -177,14 +176,7 @@ class Admin(commands.Cog):
         dev_db = discord.File(fp='./data/dev_database.db')
         live_db = discord.File(fp='./data/database.db')
 
-        dm_channel = ctx.author.dm_channel
-
-        if dm_channel is None:
-            await ctx.author.create_dm()
-
-        dm_channel = ctx.author.dm_channel
-
-        await dm_channel.send('', files=[dev_db, live_db])
+        await ctx.author.send('', files=[dev_db, live_db])
 
     @commands.command(name='update_scores_names')
     @commands.has_role(item='Dev Team')

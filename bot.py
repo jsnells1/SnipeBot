@@ -31,7 +31,9 @@ class SnipeBot(commands.Bot):
         log.info("Error caused by message: `{}`".format(ctx.message.content))
         log.info(''.join(traceback.format_exception_only(type(error), error)))
 
-        if isinstance(error, (commands.MissingPermissions, commands.CheckFailure)):
+        if isinstance(error, commands.CommandInvokeError):
+            return await ctx.send(f'CommandInvokeError: {error}')
+        elif isinstance(error, (commands.MissingPermissions, commands.CheckFailure)):
             return await ctx.send(error)
         elif isinstance(error, commands.BadArgument):
             return await ctx.send(f'BadArgument: {error}')

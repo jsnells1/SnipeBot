@@ -108,7 +108,7 @@ class Snipes(commands.Cog):
         today = datetime.now()
 
         if today.weekday() == self.club_day and today.hour >= self.club_start and today.hour < self.club_end:
-            return await ctx.send('```Sniping disabled during club hours: {} from {}:00 to {}:00 (Military Time)```'.format(calendar.day_name[self.club_day], self.club_start, self.club_end))
+            return await ctx.send(f'Sniping disabled during club hours: {calendar.day_name[self.club_day]} from {self.club_start}:00 to {self.club_end}:00 (Military Time)')
 
         if len(targets) == 0:
             return await ctx.send('To snipe a user, type !snipe <@Target>. You can snipe multiple users by typing !snipe <@Target1> <@Target2> etc..')
@@ -119,12 +119,12 @@ class Snipes(commands.Cog):
         for target in targets:
             if target.id in self.whitelist:
                 member = ctx.guild.get_member(target.id)
-                return await ctx.send('```{} has respectfully asked to be on the sniping whitelist. Please refrain from sniping them. Resubmit your snipe without that user.```'.format(member.display_name))
+                return await ctx.send(f'{member.display_name} has respectfully asked to be on the sniping whitelist. Please refrain from sniping them. Snipe cancelled.')
 
         # Add 'F' emoji to the snipe
         await ctx.message.add_reaction('\U0001f1eb')
 
-        sniper = await Sniper.from_database(ctx.author.id, ctx.guild.id, ctx.author.display_name)
+        sniper = await Sniper.from_database(ctx.author.id, ctx.guild.id, ctx.author.display_name, register=True)
 
         await ctx.send(await sniper.snipe(ctx, targets))
 
@@ -134,7 +134,7 @@ class Snipes(commands.Cog):
         if len(targets) == 0:
             return await ctx.send('Missing atleast 1 target')
 
-        sniper = await Sniper.from_database(sniper.id, ctx.guild.id, sniper.display_name)
+        sniper = await Sniper.from_database(sniper.id, ctx.guild.id, sniper.display_name, register=True)
 
         await ctx.send(await sniper.snipe(ctx, targets))
     # endregion

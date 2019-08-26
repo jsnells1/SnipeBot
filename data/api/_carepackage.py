@@ -1,9 +1,9 @@
-import aiosqlite
 import logging
 import sqlite3
 from datetime import datetime, timedelta
 
-from data.models.data_models import CarePackage
+import aiosqlite
+
 from data import api
 
 log = logging.getLogger(__name__)
@@ -38,28 +38,6 @@ def _executeStmt_noReturn(cmds):
 
 # region Inserting and Updating
 
-
-def set_carepackage(key, expiration, hint):
-    try:
-        carepackage = CarePackage(
-            key=key, expiration=expiration, hint=hint)
-        carepackage.save(force_insert=True)
-        return True
-    except:
-        log.exception('Error setting carepackage key=%s', key)
-        return False
-
-
-def reset_carepackage(key):
-    try:
-        carepackage = CarePackage.get(key=key)
-        carepackage.delete_instance()
-        return True
-    except:
-        log.exception('Error resetting carepackage key=%s', key)
-        return False
-
-
 def set_user_multiplier(userId, multiplier):
     expiration = datetime.now() + timedelta(hours=24)
 
@@ -84,33 +62,6 @@ def pass_potato(sender, receiver):
     return _executeStmt_noReturn(commands)
 
 # endregion Inserting and Updating
-
-
-def get_carepackage_hint():
-    try:
-        with sqlite3.connect(api.DATABASE) as conn:
-
-            row = conn.execute(
-                'SELECT Hint FROM CarePackage').fetchone()
-
-        return row[0]
-
-    except Exception as e:
-        print(e)
-        return False
-
-
-def check_keyword(key):
-    try:
-        CarePackage.get(key=key)
-        # If the previous call works, key exists, return true
-        return True
-    except CarePackage.DoesNotExist:
-        # Don't need to log invalid keys
-        return False
-    except:
-        log.exception('Error checking key: %s', key)
-        return False
 
 
 async def remove_expired_carepackage():

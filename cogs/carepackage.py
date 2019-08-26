@@ -1,9 +1,10 @@
 import logging
+from datetime import datetime
 
 import discord.ext.commands as commands
 
-import cogs.utils.carepackage as carepackage_utils
 import cogs.utils.rewards as Rewards
+from cogs.utils.carepackage import Package
 from cogs.utils.sniper import Sniper
 from data import api as Database
 
@@ -26,12 +27,25 @@ class CarePackage(commands.Cog):
 
     @commands.command(name='set_carepackage', hidden=True)
     @commands.has_role(item="Dev Team")
-    async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint):
-        await ctx.send(carepackage_utils.set_carepackage(keyword, time, hint))
+    async def set_carepackage_cmd(self, ctx: commands.Context, keyword, time, hint=None):
+        expiration = datetime.strptime(time, '%m/%d/%y %H:%M')
+        carepackage = Package(ctx.guild.id, keyword, expiration.timestamp(), hint)
+
+        try:
+            await carepackage.save()
+            await ctx.send('Carepackage saved.')
+        except:
+            await ctx.send('Carepackage failed to be saved.')
 
     @commands.command(name='get_hint', hidden=True)
     async def get_carepackage_hint(self, ctx: commands.Context):
-        await ctx.send(carepackage_utils.get_hint())
+        carepackages = await Package.get_all(ctx.guild.id)
+
+        if len(carepackages) == 0:
+            await ctx.send('There are no active carepackages')
+        else:
+            formatted = '\n'.join(f'CarePackage {i + 1}. {p.get_hint()}' for i, p in enumerate(carepackages))
+            await ctx.send(f'```Current hints:\n\n{formatted}```')
 
     @commands.command(name='get_rewards')
     async def get_carepackage_rewards(self, ctx: commands.Context):
@@ -61,28 +75,26 @@ class CarePackage(commands.Cog):
 
     @commands.command()
     async def guess(self, ctx: commands.Context, keyword):
-        guesser = await Sniper.from_database(ctx.author.id, ctx.guild.id, ctx.author.name)
+        guesser = await Sniper.from_database(ctx.author.id, ctx.guild.id, ctx.author.name, register=True)
 
         if guesser.is_respawning():
-            await ctx.send('Sorry, you can\'t claim the carepackage if you\'re dead!')
-            return
+            return await ctx.send('Sorry, you can\'t claim the carepackage if you\'re dead!')
 
-        success = carepackage_utils.isKeyword(keyword)
+        success = await Package.is_keyword(keyword, ctx.guild.id)
 
         if not success:
-            await ctx.send('Sorry {}, that is not the keyword.'.format(ctx.author.display_name))
-            return
+            return await ctx.send(f'Sorry {ctx.author.display_name}, that is not the keyword.')
 
         reward = Database.get_random_reward()
-        msg = Rewards.get_reward(reward[0], ctx.author.id)
+        msg = Rewards.get_reward(reward[0], ctx.author)
 
-        await ctx.send('{} guessed the keyword correctly! You open the care package and earn {}!'.format(ctx.author.display_name, msg))
+        await ctx.send(f'{ctx.author.display_name} guessed the keyword correctly! You open the care package and earn {msg}!')
 
     @commands.command(name='give_carepackage', hidden=True)
     @commands.has_role(item='Dev Team')
     async def give_carepackage(self, ctx: commands.Context, member):
 
         reward = Database.get_random_reward()
-        msg = Rewards.get_reward(reward[0], ctx.author.id)
+        msg = Rewards.get_reward(reward[0], ctx.author)
 
-        await ctx.send('{} opens the care package and earn {}!'.format(member.display_name, msg))
+        await ctx.send(f'{member.display_name} opens the care package and earn {msg}!')

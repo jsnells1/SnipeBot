@@ -2,39 +2,39 @@ from datetime import datetime, timedelta
 
 from data import api as Database
 
-# id 1
+from cogs.utils.sniper import Sniper
 
 
-def set_bonus_points(userId):
-    bonusPoints = 8
+def set_bonus_points(user):
+    # id 1
+    bonus_points = 8
+    sniper = await Sniper.from_database(user.id, user.guild.id, user.display_name)
+    await sniper.add_points(bonus_points)
 
-    Database.addPoints(userId, bonusPoints)
-
-    return '{} bonus points immediately'.format(bonusPoints)
+    return f'{bonus_points} bonus points immediately'
 
 
-# id 2
-def set_multiplier(userId):
+def set_multiplier(user):
+    # id 2
     multiplier = 3
 
-    Database.set_user_multiplier(userId, multiplier)
+    Database.set_user_multiplier(user.id, multiplier)
 
-    return 'a x{} point multiplier for 24 hours'.format(multiplier)
+    return f'a x{multiplier} point multiplier for 24 hours'
 
 
-# id 3
-def set_smoke_bomb(userId):
-    Database.set_user_smokebomb(userId)
+def set_smoke_bomb(user):
+    # id 3
+    Database.set_user_smokebomb(user.id)
 
     return 'a smoke bomb! Use it whenever you\'d like for 3 hours of immunity!'
 
-# id 4
 
-
-def set_hot_potato(userId):
+def set_hot_potato(user):
+    # id 4
     expiration = datetime.now() + timedelta(hours=24)
 
-    Database.set_user_potato(userId, expiration.timestamp())
+    Database.set_user_potato(user.id, expiration.timestamp())
 
     return 'a... Hot Potato Bomb! Uh Oh! Snipe someone else to pass it to someone else before it explodes'
 
@@ -47,5 +47,5 @@ function_map = {
 }
 
 
-def get_reward(id, userId):
-    return function_map[id](userId)
+def get_reward(id, user):
+    return function_map[id](user)
