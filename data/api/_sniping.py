@@ -10,32 +10,6 @@ from data import api
 log = logging.getLogger(__name__)
 
 
-def removeUser(userId):
-    try:
-        user = Scores.get(userId)
-        user.delete_instance()
-
-        log.info('User deleted with ID: %s', userId)
-    except Scores.DoesNotExist:
-        pass
-    except:
-        log.exception('Error removing user_id: %s', userId)
-        return False
-
-    try:
-        user = SnipingMods.get(userId)
-        user.delete_instance()
-
-        log.info('User deleted with ID: %s', userId)
-        return True
-
-    except SnipingMods.DoesNotExist:
-        return True
-    except:
-        log.exception('Error removing user_id: %s', userId)
-        return False
-
-
 def remove_expired_revenges():
     today = datetime.now().timestamp()
 
@@ -45,16 +19,6 @@ def remove_expired_revenges():
         return True
     except:
         log.exception('Error removing expired revenges')
-        return False
-
-
-def addPoints(userId, amt):
-    try:
-        Scores.update({Scores.points: Scores.points + amt}
-                      ).where(Scores.user_id == userId).execute()
-        return True
-    except:
-        log.exception('Error adding points (%s) for user_id: %s', amt, userId)
         return False
 
 
