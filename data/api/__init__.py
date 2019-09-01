@@ -3,8 +3,6 @@ from enum import Enum
 from ._sniping import *
 from ._carepackage import *
 
-from data.models.data_models import database
-
 LIVE_DATABASE = './data/database.db'
 DEV_DATABASE = './data/dev_database.db'
 
@@ -24,9 +22,6 @@ def switchDatabase(env):
     elif env == Environment.dev:
         DATABASE = DEV_DATABASE
         do_change = True
-
-    if do_change:
-        database.init(DATABASE)
 
     return do_change
 

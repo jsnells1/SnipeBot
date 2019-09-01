@@ -3,64 +3,57 @@ import logging
 
 from datetime import datetime
 
-from data.models.data_models import Scores, SnipingMods
-
 from data import api
 
 log = logging.getLogger(__name__)
 
 
-def remove_expired_revenges():
+async def remove_expired_revenges():
     today = datetime.now().timestamp()
 
     try:
-        Scores.update(revenge=None, revenge_time=None).where(
-            Scores.revenge_time < today).execute()
+        async with aiosqlite.connect(api.DATABASE) as db:
+            await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today))
+            await db.commit()
+
         return True
     except:
         log.exception('Error removing expired revenges')
         return False
 
 
-def setSnipes(userId, amt):
-
+async def setSnipes(userId, amt):
     try:
-        Scores.update({Scores.snipes: amt}).where(
-            Scores.user_id == userId).execute()
+        async with aiosqlite.connect(api.DATABASE) as db:
+            await db.execute('UPDATE Scores SET Snipes = ? WHERE UserID = ?', (amt, userId))
+            await db.commit()
 
         return True
     except:
-        log.exception('Error setting snipes (%s) for user_id: %s', amt, userId)
         return False
 
 
-def setPoints(userId, amt):
-
+async def setPoints(userId, amt):
     try:
-        Scores.update(points=amt).where(Scores.user_id == userId).execute()
+        async with aiosqlite.connect(api.DATABASE) as db:
+            await db.execute('UPDATE Scores SET Points = ? WHERE UserID = ?', (amt, userId))
+            await db.commit()
+
         return True
     except:
-        log.exception('Error setting points (%s) for user_id: %s', amt, userId)
         return False
 
 
-def setDeaths(userId, amt):
+async def setDeaths(userId, amt):
 
     try:
-        Scores.update(deaths=amt).where(Scores.user_id == userId).execute()
+        async with aiosqlite.connect(api.DATABASE) as db:
+            await db.execute('UPDATE Scores SET Deaths = ? WHERE UserID = ?', (amt, userId))
+            await db.commit()
+
         return True
     except:
-        log.exception('Error setting deaths (%s) for user_id: %s', amt, userId)
         return False
-
-
-def getAllUsers():
-    try:
-        users = Scores.select(Scores.user_id)
-        return [user.user_id for user in users]
-    except:
-        log.exception('Error retrieving users')
-        return []
 
 
 async def get_all_respawns():
@@ -75,15 +68,13 @@ async def get_all_respawns():
             return rows
 
 
-def update_scores_names(members):
+async def update_scores_names(members):
     try:
-        params = [(member.display_name, member.id) for member in members]
-
-        for param in params:
-            Scores.update(name=param[0]).where(
-                Scores.user_id == param[1]).execute()
-            SnipingMods.update(name=param[0]).where(
-                SnipingMods.user_id == param[1]).execute()
+        for member in members:
+            async with aiosqlite.connect(api.DATABASE) as db:
+                await db.execute('UPDATE Scores SET Name = ? WHERE UserID = ?', (member.display_name, member.id))
+                await db.execute('UPDATE SnipingMods SET Name = ? WHERE UserID < ?', (member.display_name, member.id))
+                await db.commit()
 
         return True
 
