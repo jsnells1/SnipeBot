@@ -186,4 +186,3 @@ class Admin(commands.Cog):
             await ctx.send('```Usernames updated.```')
         else:
             await ctx.send('```Usernames failed to be updated.```')
-
