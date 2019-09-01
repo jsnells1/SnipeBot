@@ -36,7 +36,7 @@ class Snipes(commands.Cog):
             channel_name = 'snipebot'
 
         # Silently remove revenge targets that have expired
-        Database.remove_expired_revenges()
+        await Database.remove_expired_revenges()
 
         # Get the list of respawns, spud explosions, immunity expiration, and carepackage expirations
         respawns = await Database.get_all_respawns()

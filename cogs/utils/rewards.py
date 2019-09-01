@@ -5,7 +5,7 @@ from data import api as Database
 from cogs.utils.sniper import Sniper
 
 
-def set_bonus_points(user):
+async def set_bonus_points(user):
     # id 1
     bonus_points = 8
     sniper = await Sniper.from_database(user.id, user.guild.id, user.display_name)
