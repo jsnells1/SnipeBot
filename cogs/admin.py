@@ -3,53 +3,56 @@ import os
 import discord
 import discord.ext.commands as commands
 
+from cogs.utils.sniper import Sniper
 
-from data import code as Database
-from data.code import Environment
+from data import api as Database
+from data.api import Environment
 
 
-class AdminCommands(commands.Cog):
+class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(hidden=True)
+    @commands.has_role(item='Dev Team')
+    async def q2(self, ctx):
+        await self.bot.logout()
 
     @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
     @commands.has_role(item='Dev Team')
     async def removeUser(self, ctx: commands.Context, member: discord.Member):
-        await ctx.send('Are you sure you want to remove user: {} (Y/N)'.format(member.nick))
+        if not await Sniper.exists(member.id, member.guild.id):
+            await ctx.send('User is not registered.')
+
+        await ctx.send(f'Are you sure you want to remove user: {member.display_name} (Y/N)')
 
         author = ctx.message.author
         channel = ctx.message.channel
 
         def check(m):
-            return (m.content == 'Y' or m.content == 'N' or m.content == 'n' or m.content == 'y') and m.channel == channel and m.author.id == author.id
+            return (m.content in ('y', 'Y', 'n', 'N')) and m.channel == channel and m.author.id == author.id
 
         try:
             response = await self.bot.wait_for('message', check=check, timeout=10)
         except:
-            await ctx.send("```Timeout reached. User lived to fight another day.```")
+            await ctx.send('Timeout reached. User lived to fight another day.')
             return
 
         if response.content == 'Y' or response.content == 'y':
-            success = Database.removeUser(member.id)
-
-            if success:
-                await ctx.send('```User removed.```')
-            else:
-                await ctx.send('```Error: User failed to be removed.```')
+            try:
+                await Sniper.remove_user(member.id, member.guild.id)
+                await ctx.send('User removed.')
+            except:
+                await ctx.send('Error: User failed to be removed.')
         else:
-            await ctx.send('```User lives to fight another day.```')
+            await ctx.send('User lives to fight another day.')
 
     @commands.command(name='RegisterUser', hidden=True)
     @commands.has_role(item='Dev Team')
     async def registerUser(self, ctx: commands.Context, user: discord.Member):
-        response = Database.registerUser(user.id)
+        user = await Sniper.from_database(user.id, ctx.guild, user.display_name, register=True)
 
-        msg = '```User succesfully added.```'
-
-        if not response:
-            msg = '```Potential Error - User could not be added.```'
-
-        await ctx.send(msg)
+        await ctx.send('User succesfully added.')
 
     @commands.command(name='SetSnipes', hidden=True)
     @commands.has_role(item='Dev Team')
@@ -78,11 +81,12 @@ class AdminCommands(commands.Cog):
     @commands.command(name='AddPoints', hidden=True)
     @commands.has_role(item='Dev Team')
     async def addPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
-        response = Database.addPoints(user.id, amount)
+        user = Sniper.from_database(user.id, ctx.guid.id, user.display_name)
 
-        msg = '```User points added.```'
-
-        if not response:
+        try:
+            user.add_points(amount)
+            msg = '```User points added.```'
+        except:
             msg = '```Potential Error - User could not be updated.```'
 
         await ctx.send(msg)
@@ -102,7 +106,6 @@ class AdminCommands(commands.Cog):
     @commands.command(name='switchDB', hidden=True)
     @commands.has_role(item="Dev Team")
     async def switchDB(self, ctx: commands.Context, env=None):
-
         if env is None:
             await ctx.send('Please pass the environment to switch to (live/dev)')
             return
@@ -123,10 +126,9 @@ class AdminCommands(commands.Cog):
         else:
             await ctx.send('Error changing database.')
 
-    @commands.command(name='db_environment', hidden=True)
+    @commands.command(name='db_env', hidden=True)
     @commands.has_role(item='Dev Team')
-    async def getDBEnvironment(self, ctx: commands.Context, env=None):
-
+    async def db_environment(self, ctx: commands.Context, env=None):
         if Database.DATABASE == Database.DEV_DATABASE:
             await ctx.send('```Dev```')
         else:
@@ -140,7 +142,7 @@ class AdminCommands(commands.Cog):
         healthStr = 'Tell the Indies that the Pi said hello.\n\n'
         heat = self.getCPUtemperature()
         healthStr += 'Temp: {}C | {:.2f}F\n'.format(heat,
-                                                9.0 / 5.0 * float(heat) + 32)
+                                                    9.0 / 5.0 * float(heat) + 32)
         healthStr += 'Free RAM: {}KB\n'.format(
             int(float(self.getRAMinfo()[1]) / 1024))
         healthStr += 'Current CPU Usage: {}%\n'.format(self.getCPUuse())
@@ -158,12 +160,10 @@ class AdminCommands(commands.Cog):
     # Index 2: free RAM
     def getRAMinfo(self):
         p = os.popen('free')
-        i = 0
-        while 1:
-            i = i + 1
-            line = p.readline()
-            if i == 2:
-                return(line.split()[1:4])
+        p.readline()
+
+        line = p.readline()
+        return line.split()[1:4]
 
     # Return % of CPU used by user as a character string
     def getCPUuse(self):
@@ -177,14 +177,7 @@ class AdminCommands(commands.Cog):
         dev_db = discord.File(fp='./data/dev_database.db')
         live_db = discord.File(fp='./data/database.db')
 
-        dm_channel = ctx.author.dm_channel
-
-        if dm_channel is None:
-            await ctx.author.create_dm()
-
-        dm_channel = ctx.author.dm_channel
-
-        await dm_channel.send('', files=[dev_db, live_db])
+        await ctx.author.send('', files=[dev_db, live_db])
 
     @commands.command(name='update_scores_names')
     @commands.has_role(item='Dev Team')
@@ -193,13 +186,3 @@ class AdminCommands(commands.Cog):
             await ctx.send('```Usernames updated.```')
         else:
             await ctx.send('```Usernames failed to be updated.```')
-
-    @commands.command(name='assign_sniper_role')
-    @commands.has_role(item='Dev Team')
-    async def assign_sniper_role(self, ctx: commands.Context):
-        userIds = Database.getAllUsers()
-        role = discord.utils.get(ctx.guild.roles, name='Sniper Team')
-
-        for userId in userIds:
-            member = ctx.guild.get_member(userId[0])
-            await member.add_roles(role)
