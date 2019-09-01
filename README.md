@@ -1,5 +1,4 @@
 # SnipeBot
-[![Build Status](https://travis-ci.com/jsnells1/SnipeBot.svg?branch=master)](https://travis-ci.com/jsnells1/SnipeBot)
 
 A discord bot to manage 'Snipes' in the SU Indies club discord. Hopefully to be expanded to a more broader role in the future.
 
