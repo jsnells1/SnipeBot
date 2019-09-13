@@ -159,4 +159,4 @@ class Snipes(commands.Cog):
 
         with open('whitelist', 'w') as f:
             for i in self.whitelist:
-                f.write(str(i) + '\n')
+                f.write(f'{i}\n')
