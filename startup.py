@@ -53,8 +53,8 @@ def main():
         CLUB_DAY = config.club_day
         START_TIME = config.club_time_start
         END_TIME = config.club_time_stop
-    except:
-        log.warning('Could not resolve club day, start, and/or stop in config')
+    except Exception as e:
+        log.warning(e)
 
     # region Initialize and Run bot
 
