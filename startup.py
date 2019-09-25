@@ -35,9 +35,9 @@ def read_env_vars():
 
     if args.env is not None:
         if args.env == 'dev':
-            api.switchDatabase(api.Environment.DEV)
+            api.switch_database(api.Environment.DEV)
         elif args.env == 'live':
-            api.switchDatabase(api.Environment.LIVE)
+            api.switch_database(api.Environment.LIVE)
 
 
 def main():

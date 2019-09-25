@@ -9,7 +9,7 @@ DEV_DATABASE = './data/dev_database.db'
 DATABASE = DEV_DATABASE
 
 
-def switchDatabase(env):
+def switch_database(env):
 
     global DATABASE
     global LIVE_DATABASE
