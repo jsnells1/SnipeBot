@@ -118,7 +118,7 @@ class Admin(commands.Cog):
             await ctx.send('Invalid argument.')
             return
 
-        response = Database.switchDatabase(dbEnv)
+        response = Database.switch_database(dbEnv)
 
         if response:
             await ctx.send('Database successfully changed.')
