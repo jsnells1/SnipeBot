@@ -162,7 +162,9 @@ class Sniper():
 
         leader_id = None
         if len(leaderboard) > 0:
-            leader_id = leaderboard[0]['UserID']
+            # Hack
+            if leaderboard[0]['snipes'] != 0 or leaderboard[0]['deaths'] != 0 or leaderboard[0]['points'] != 0:
+                leader_id = leaderboard[0]['UserID']
 
         bonusPoints = 0
 
