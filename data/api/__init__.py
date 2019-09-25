@@ -16,10 +16,10 @@ def switch_database(env):
     global DEV_DATABASE
 
     do_change = False
-    if env == Environment.DEV:
+    if env == Environment.LIVE:
         DATABASE = LIVE_DATABASE
         do_change = True
-    elif env == Environment.LIVE:
+    elif env == Environment.DEV:
         DATABASE = DEV_DATABASE
         do_change = True
 
