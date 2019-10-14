@@ -198,25 +198,25 @@ class Sniper():
             else:
                 errors.append(loser)
 
-            hasPotato = False
-            if len(hits) > 0:
-                await self.update_killstreak(len(hits))
-                hasPotato = await self.has_potato()
-                if hasPotato:
-                    await self.pass_potato(hits[0])
+        hasPotato = False
+        if len(hits) > 0:
+            await self.update_killstreak(len(hits))
+            hasPotato = await self.has_potato()
+            if hasPotato:
+                await self.pass_potato(hits[0])
 
-            killstreak = self.killstreak
-            # Add the bonus points to the number of hits (1 point per hit) then multiply by the user's multiplier
-            totalPoints = (bonusPoints + len(hits)) * self.multiplier
-            # Add the points to the user in the database
-            await self.add_points(totalPoints)
-            # Get the discord user for the revenge target, will return None if not found or if revenge is None
-            revengeMember = ctx.guild.get_member(self.revenge)
+        killstreak = self.killstreak
+        # Add the bonus points to the number of hits (1 point per hit) then multiply by the user's multiplier
+        totalPoints = (bonusPoints + len(hits)) * self.multiplier
+        # Add the points to the user in the database
+        await self.add_points(totalPoints)
+        # Get the discord user for the revenge target, will return None if not found or if revenge is None
+        revengeMember = ctx.guild.get_member(self.revenge)
 
-            output = formatSnipeString(sniper=self, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
-                                       revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=self.multiplier)
+        output = formatSnipeString(sniper=self, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
+                                    revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=self.multiplier)
 
-            return output
+        return output
 
     async def update_killstreak(self, kills):
         killstreak_record = max(self.killstreak + kills, self.killstreak_record)
