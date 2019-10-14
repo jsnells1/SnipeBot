@@ -23,7 +23,12 @@ class Leaderboard():
         rows = await self.get_rows()
         killstreak_info = await self.get_highest_killstreak()
 
-        killstreak_holder = self.ctx.guild.get_member(killstreak_info['UserID'])
+        killstreak_holder = 'None'
+        killstreak_record = 'None'
+
+        if killstreak_info is not None:
+            killstreak_holder = self.ctx.guild.get_member(killstreak_info['UserID']).display_name[0:8]
+            killstreak_record = str(killstreak_info['KillstreakRecord'])
 
         for row in rows:
             user = await commands.MemberConverter().convert(self.ctx, str(row['UserID']))
@@ -32,7 +37,7 @@ class Leaderboard():
 
         records = [['Record', 'User', '']]
 
-        records.append(['Streak', killstreak_holder.display_name[0:8], str(killstreak_info['KillstreakRecord'])])
+        records.append(['Streak', killstreak_holder, killstreak_record])
 
         output = tabulate(records, headers='firstrow', tablefmt='fancy_grid') + '\n\n'
         output += tabulate(outputRows, headers='firstrow', tablefmt='fancy_grid')

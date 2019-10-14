@@ -9,17 +9,17 @@ DEV_DATABASE = './data/dev_database.db'
 DATABASE = DEV_DATABASE
 
 
-def switchDatabase(env):
+def switch_database(env):
 
     global DATABASE
     global LIVE_DATABASE
     global DEV_DATABASE
 
     do_change = False
-    if env == Environment.live:
+    if env == Environment.LIVE:
         DATABASE = LIVE_DATABASE
         do_change = True
-    elif env == Environment.dev:
+    elif env == Environment.DEV:
         DATABASE = DEV_DATABASE
         do_change = True
 
@@ -27,5 +27,5 @@ def switchDatabase(env):
 
 
 class Environment (Enum):
-    dev = 1
-    live = 2
+    DEV = 1
+    LIVE = 2

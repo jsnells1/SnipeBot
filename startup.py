@@ -35,9 +35,9 @@ def read_env_vars():
 
     if args.env is not None:
         if args.env == 'dev':
-            api.switchDatabase(api.Environment.dev)
+            api.switch_database(api.Environment.DEV)
         elif args.env == 'live':
-            api.switchDatabase(api.Environment.live)
+            api.switch_database(api.Environment.LIVE)
 
 
 def main():
@@ -53,8 +53,8 @@ def main():
         CLUB_DAY = config.club_day
         START_TIME = config.club_time_start
         END_TIME = config.club_time_stop
-    except:
-        log.warning('Could not resolve club day, start, and/or stop in config')
+    except Exception as e:
+        log.warning(e)
 
     # region Initialize and Run bot
 

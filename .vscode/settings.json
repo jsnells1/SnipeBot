@@ -6,7 +6,7 @@
         "--enable=F,E,unreachable,duplicate-key,unnecessary-semicolon,global-variable-not-assigned,unused-variable,binary-op-exception,bad-format-string,anomalous-backslash-in-string,bad-open-mode",
         "--enable=W0614, W0611"
     ],
-    "python.linting.pep8Enabled": true,
+    "python.linting.pycodestyleEnabled": true,
     "python.linting.enabled": true,
     "python.testing.unittestArgs": [
         "-v",
@@ -21,11 +21,11 @@
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "python.linting.pep8Args": [
+    "python.linting.pycodestyleArgs": [
         "--ignore=E501"
     ],
-    "python.linting.pep8CategorySeverity.W": "Information",
-    "python.linting.pep8CategorySeverity.E": "Information",
+    "python.linting.pycodestyleCategorySeverity.W": "Information",
+    "python.linting.pycodestyleCategorySeverity.E": "Information",
     "python.testing.promptToConfigure": false,
     "python.formatting.autopep8Args": [
         "--max-line-length=500"

@@ -111,14 +111,14 @@ class Admin(commands.Cog):
             return
 
         if env == 'live':
-            dbEnv = Environment.live
+            dbEnv = Environment.LIVE
         elif env == 'dev':
-            dbEnv = Environment.dev
+            dbEnv = Environment.DEV
         else:
             await ctx.send('Invalid argument.')
             return
 
-        response = Database.switchDatabase(dbEnv)
+        response = Database.switch_database(dbEnv)
 
         if response:
             await ctx.send('Database successfully changed.')
@@ -172,7 +172,7 @@ class Admin(commands.Cog):
     # endregion CPU Health
 
     @commands.command(name='backup_db')
-    @commands.has_role(item='Dev Team')
+    @commands.is_owner()
     async def backup_db(self, ctx: commands.Context):
         dev_db = discord.File(fp='./data/dev_database.db')
         live_db = discord.File(fp='./data/database.db')
