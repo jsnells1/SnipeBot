@@ -1,11 +1,11 @@
-import aiosqlite
-
 from datetime import datetime, timedelta
 
-from cogs.utils.leaderboard import Leaderboard
-from cogs.utils.formatting import formatSnipeString
+import aiosqlite
+import discord
 
 import data.api as Database
+from cogs.utils.formatting import formatSnipeString
+from cogs.utils.leaderboard import Leaderboard
 
 
 class Sniper():
@@ -42,6 +42,10 @@ class Sniper():
 
     @classmethod
     async def from_database(cls, id, guild, name, register=False):
+
+        if isinstance(guild, discord.Guild):
+            guild = guild.id
+
         sniper = cls(id, guild, name)
 
         if register:
@@ -214,9 +218,21 @@ class Sniper():
         revengeMember = ctx.guild.get_member(self.revenge)
 
         output = formatSnipeString(sniper=self, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
-                                    revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=self.multiplier)
+                                   revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=self.multiplier)
 
         return output
+
+    async def update(self):
+        scores_info = (self.display_name, self.points, self.snipes, self.deaths, self.respawn, self.revenge, self.revenge_time, self.killstreak, self.killstreak_record, self.id)
+        snipingmods_info = (self.display_name, self.multiplier, self.multi_expiration, self.smokebomb, self.immunity, self.id)
+
+        scores_query = 'UPDATE Scores SET Name = ?, Points = ?, Snipes = ?, Deaths = ?, Respawn = ?, Revenge = ?, RevengeTime = ?, Killstreak = ?, KillstreakRecord = ? WHERE UserID = ?'
+        snipingmods_query = 'UPDATE SnipingMods SET Name = ?, Multiplier = ?, MultiExpiration = ?, SmokeBomb = ?, Immunity = ? WHERE UserID = ?'
+
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            await db.execute(scores_query, scores_info)
+            await db.execute(snipingmods_query, snipingmods_info)
+            await db.commit()
 
     async def update_killstreak(self, kills):
         killstreak_record = max(self.killstreak + kills, self.killstreak_record)
