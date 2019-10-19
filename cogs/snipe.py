@@ -3,6 +3,7 @@ import collections
 import logging
 from datetime import datetime
 
+import aiosqlite
 import discord
 import discord.ext.commands as commands
 from discord import utils
@@ -28,6 +29,27 @@ class Snipes(commands.Cog):
 
         log.info(f'Whitelisted users: {self.whitelist}')
 
+    async def get_all_respawns(self):
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            date = datetime.now().timestamp()
+            async with db.execute('SELECT Guild, UserID FROM Scores WHERE Respawn < ?', (date,)) as cursor:
+                rows = await cursor.fetchall()
+
+                await db.execute('UPDATE Scores SET Respawn = ? WHERE Respawn < ?', (None, date))
+                await db.commit()
+
+                return rows
+
+    async def remove_expired_revenges(self):
+        today = datetime.now().timestamp()
+
+        try:
+            async with aiosqlite.connect(api.DATABASE) as db:
+                await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today))
+                await db.commit()
+        except:
+            log.exception('Error removing expired revenges')
+
     @tasks.loop(minutes=1.0)
     async def maintenance(self):
         if Database.DATABASE == Database.DEV_DATABASE:
@@ -36,7 +58,7 @@ class Snipes(commands.Cog):
             channel_name = 'snipebot'
 
         # Silently remove revenge targets that have expired
-        await Database.remove_expired_revenges()
+        await self.remove_expired_revenges()
 
         # Get the list of respawns, spud explosions, immunity expiration, and carepackage expirations
         respawns = await Database.get_all_respawns()
