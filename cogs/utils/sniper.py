@@ -83,11 +83,65 @@ class Sniper():
 
             await db.commit()
 
+    @classmethod
+    async def get_respawns(cls):
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            date = datetime.now().timestamp()
+            async with db.execute('SELECT Guild, UserID FROM Scores WHERE Respawn < ?', (date,)) as cursor:
+                rows = await cursor.fetchall()
+
+                await db.execute('UPDATE Scores SET Respawn = ? WHERE Respawn < ?', (None, date))
+                await db.commit()
+
+                return rows
+
+    @classmethod
+    async def get_expired_immunes(cls):
+        now = datetime.now().timestamp()
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute('SELECT Guild, UserID FROM SnipingMods WHERE Immunity < ?', (now,)) as cursor:
+                rows = await cursor.fetchall()
+
+            if len(rows) > 0:
+                await db.execute('UPDATE SnipingMods SET Immunity = ? WHERE Immunity < ?', (None, now, ))
+                await db.commit()
+
+            return rows
+
+    @classmethod
+    async def get_exploded_potatoes(cls):
+        pointDeduction = 3
+        now = datetime.now().timestamp()
+
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute('SELECT Guild, Owner FROM HotPotato WHERE Explosion < ?', (now,)) as cursor:
+                rows = await cursor.fetchall()
+
+            if len(rows) > 0:
+                await db.execute('DELETE FROM HotPotato WHERE Explosion < ?', (now,))
+
+            for row in rows:
+                await db.execute('UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID =  ?', (pointDeduction, row['Owner']))
+
+            await db.commit()
+
+            return rows
+
+    @classmethod
+    async def remove_expired_revenges(cls):
+        now = datetime.now().timestamp()
+
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, now))
+            await db.commit()
+
     async def add_snipe(self, target):
         try:
             await self.register_self()
             await target.register_self()
-        except:
+        except Exception:
             return False
 
         try:
@@ -112,7 +166,7 @@ class Sniper():
 
             return True
 
-        except:
+        except Exception:
             return False
 
     async def give_potato(self, explosion):

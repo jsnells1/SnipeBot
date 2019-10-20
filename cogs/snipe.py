@@ -30,59 +30,6 @@ class Snipes(commands.Cog):
 
         log.info(f'Whitelisted users: {self.whitelist}')
 
-    async def check_exploded_potatoes(self):
-        pointDeduction = 3
-        now = datetime.now().timestamp()
-
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            db.row_factory = aiosqlite.Row
-            async with db.execute('SELECT Guild, Owner FROM HotPotato WHERE Explosion < ?', (now,)) as cursor:
-                rows = await cursor.fetchall()
-
-            if len(rows) > 0:
-                await db.execute('DELETE FROM HotPotato WHERE Explosion < ?', (now,))
-
-            for row in rows:
-                await db.execute('UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID =  ?', (pointDeduction, row['Owner']))
-
-            await db.commit()
-
-            return rows
-
-    async def get_expired_immunes(self):
-        now = datetime.now().timestamp()
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            db.row_factory = aiosqlite.Row
-            async with db.execute('SELECT Guild, UserID FROM SnipingMods WHERE Immunity < ?', (now,)) as cursor:
-                rows = await cursor.fetchall()
-
-            if len(rows) > 0:
-                await db.execute('UPDATE SnipingMods SET Immunity = ? WHERE Immunity < ?', (None, now, ))
-                await db.commit()
-
-            return rows
-
-    async def get_all_respawns(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            date = datetime.now().timestamp()
-            async with db.execute('SELECT Guild, UserID FROM Scores WHERE Respawn < ?', (date,)) as cursor:
-                rows = await cursor.fetchall()
-
-                await db.execute('UPDATE Scores SET Respawn = ? WHERE Respawn < ?', (None, date))
-                await db.commit()
-
-                return rows
-
-    async def remove_expired_revenges(self):
-        today = datetime.now().timestamp()
-
-        try:
-            async with aiosqlite.connect(Database.DATABASE) as db:
-                await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today))
-                await db.commit()
-        except:
-            log.exception('Error removing expired revenges')
-
     @tasks.loop(minutes=1.0)
     async def maintenance(self):
         if Database.DATABASE == Database.DEV_DATABASE:
@@ -91,12 +38,12 @@ class Snipes(commands.Cog):
             channel_name = 'snipebot'
 
         # Silently remove revenge targets that have expired
-        await self.remove_expired_revenges()
+        await Sniper.remove_expired_revenges()
 
         # Get the list of respawns, spud explosions, immunity expiration, and carepackage expirations
-        respawns = await self.get_all_respawns()
-        explosions = await self.check_exploded_potatoes()
-        expirations = await self.get_expired_immunes()
+        respawns = await Sniper.get_respawns
+        explosions = await Sniper.get_exploded_potatoes()
+        expirations = await Sniper.get_expired_immunes()
         expired_carepackages = await Package.remove_expired()
 
         # Dictionary of guild_id, messages_to_send pairs
