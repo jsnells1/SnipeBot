@@ -107,6 +107,7 @@ venv.bak/
 config.ini
 config.cfg
 config.py
+config.json
 
 # log files
 **/log/

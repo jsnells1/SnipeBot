@@ -11,13 +11,21 @@ from cogs.soapbox import Soapbox
 from cogs.utils import db
 
 log = logging.getLogger(__name__)
-BOT_PREFIX = '!'
 
 
 class SnipeBot(commands.Bot):
-    def __init__(self, day, start, end):
-        super().__init__(command_prefix=BOT_PREFIX, case_insensitive=True,
-                         activity=discord.Activity(type=discord.ActivityType.listening, name='Logan\'s SI Session'))
+    def __init__(self, config):
+        prefix = '!'
+        super().__init__(command_prefix=prefix, case_insensitive=True,
+                         activity=discord.Activity(type=discord.ActivityType.playing, name='Logan\'s SI Session'))
+
+        self.config = config
+
+        club_info = config['club_time']
+
+        day = club_info.get('day_of_week', -1)
+        start = club_info.get('start_hour', -1)
+        end = club_info.get('stop_hour', -1)
 
         self.add_cog(Soapbox(self))
         self.add_cog(Snipes(self, day, start, end))
@@ -43,3 +51,6 @@ class SnipeBot(commands.Bot):
     async def on_ready(self):
         log.info('Bot started: Database: ' + db.DATABASE)
         print('Ready. Database: ' + db.DATABASE)
+
+    def run(self):
+        super().run(self.config['token'])

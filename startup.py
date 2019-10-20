@@ -1,12 +1,12 @@
 import argparse
+import json
 import logging
 import logging.handlers
 import os
 import sys
 
-import config
-from bot import SnipeBot
 import cogs.utils.db as Database
+from bot import SnipeBot
 
 log = logging.getLogger()
 
@@ -46,23 +46,13 @@ def main():
     read_env_vars()
 
     # Read and Verify config
-    CLUB_DAY = -1
-    START_TIME = -1
-    END_TIME = -1
-    try:
-        CLUB_DAY = config.club_day
-        START_TIME = config.club_time_start
-        END_TIME = config.club_time_stop
-    except Exception as e:
-        log.warning(e)
+    with open('config.json') as config_file:
+        config = json.load(config_file)
 
-    # region Initialize and Run bot
+    # Initialize and Run bot
+    bot = SnipeBot(config)
 
-    bot = SnipeBot(CLUB_DAY, START_TIME, END_TIME)
-
-    bot.run(config.token)
-
-    # endregion Initialize and Run bot
+    bot.run()
 
 
 if __name__ == "__main__":
