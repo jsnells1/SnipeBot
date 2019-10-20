@@ -104,7 +104,7 @@ class Admin(commands.Cog):
         else:
             await ctx.send('**Live**')
 
-    @commands.command(name='update_names')
+    @commands.command(hidden=True)
     @commands.has_role(item='Dev Team')
     async def update_names(self, ctx: commands.Context):
         num_updated = 0
