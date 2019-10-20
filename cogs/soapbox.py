@@ -14,26 +14,7 @@ class Soapbox(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def soapbox(self, ctx):
-        subcommands = ctx.command.commands
-
-        general_commands = [
-            f'{cmd.name} - {cmd.brief}' for cmd in subcommands if len(cmd.checks) == 0]
-
-        admin_commands = [
-            f'{cmd.name} - {cmd.brief}' for cmd in subcommands if len(cmd.checks) > 0]
-
-        embed = discord.Embed(title='List of Subcommands',
-                              description='To use these commands, do:\n!soapbox subcommand', color=discord.Color.dark_blue())
-
-        embed.set_author(name='SnipeBot', icon_url=self.bot.user.avatar_url)
-
-        embed.add_field(name='**General Use**',
-                        value='\n'.join(general_commands), inline=False)
-
-        embed.add_field(name='**Admin Use**',
-                        value='\n'.join(admin_commands), inline=False)
-
-        await ctx.send(embed=embed)
+        await ctx.send_help(ctx.command)
 
     @soapbox.command(name='schedule', brief="Returns the current soapbox schedule")
     async def soapbox_schedule(self, ctx: commands.Context):
