@@ -11,8 +11,8 @@ class Admin(commands.Cog):
         self.bot = bot
 
     @commands.command(hidden=True)
-    @commands.has_role(item='Dev Team')
-    async def q2(self, ctx):
+    @commands.is_owner()
+    async def shutdown(self, ctx):
         await self.bot.logout()
 
     @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
