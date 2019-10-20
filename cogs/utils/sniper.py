@@ -58,7 +58,7 @@ class Sniper():
                 row = await cursor.fetchone()
 
                 if row is None:
-                    return sniper
+                    return None
 
                 sniper.points = row['Points']
                 sniper.snipes = row['snipes']
@@ -82,13 +82,6 @@ class Sniper():
             await db.execute('DELETE FROM SnipingMods WHERE UserID = ? AND Guild = ?', (id, guild))
 
             await db.commit()
-
-    async def add_points(self, points):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE Scores SET Points = Points + ? WHERE UserID = ?', (points, self.id))
-            await db.commit()
-
-        self.points += points
 
     async def add_snipe(self, target):
         try:
@@ -122,6 +115,11 @@ class Sniper():
         except:
             return False
 
+    async def give_potato(self, explosion):
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            await db.execute('INSERT INTO HotPotato (Owner, Explosion) VALUES (?, ?)', (self.id, explosion))
+            await db.commit()
+
     async def has_potato(self):
         async with aiosqlite.connect(Database.DATABASE) as db:
             query = 'SELECT 1 FROM HotPotato WHERE Owner = ? AND Guild = ? LIMIT 1'
@@ -152,6 +150,10 @@ class Sniper():
         async with aiosqlite.connect(Database.DATABASE) as db:
             await db.execute('UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE UserID = ? AND Guild = ?', (multiplier, expiration, self.id, self.guild))
             await db.commit()
+
+    async def set_immunity(self, expiration):
+        self.immunity = expiration
+        await self.update()
 
     async def snipe(self, ctx, targets):
         hits = []
@@ -213,7 +215,8 @@ class Sniper():
         # Add the bonus points to the number of hits (1 point per hit) then multiply by the user's multiplier
         totalPoints = (bonusPoints + len(hits)) * self.multiplier
         # Add the points to the user in the database
-        await self.add_points(totalPoints)
+        self.points += totalPoints
+        await self.update()
         # Get the discord user for the revenge target, will return None if not found or if revenge is None
         revengeMember = ctx.guild.get_member(self.revenge)
 
@@ -223,11 +226,11 @@ class Sniper():
         return output
 
     async def update(self):
-        scores_info = (self.display_name, self.points, self.snipes, self.deaths, self.respawn, self.revenge, self.revenge_time, self.killstreak, self.killstreak_record, self.id)
-        snipingmods_info = (self.display_name, self.multiplier, self.multi_expiration, self.smokebomb, self.immunity, self.id)
+        scores_info = (self.display_name, self.points, self.snipes, self.deaths, self.respawn, self.revenge, self.revenge_time, self.killstreak, self.killstreak_record, self.id, self.guild)
+        snipingmods_info = (self.display_name, self.multiplier, self.multi_expiration, self.smokebomb, self.immunity, self.id, self.guild)
 
-        scores_query = 'UPDATE Scores SET Name = ?, Points = ?, Snipes = ?, Deaths = ?, Respawn = ?, Revenge = ?, RevengeTime = ?, Killstreak = ?, KillstreakRecord = ? WHERE UserID = ?'
-        snipingmods_query = 'UPDATE SnipingMods SET Name = ?, Multiplier = ?, MultiExpiration = ?, SmokeBomb = ?, Immunity = ? WHERE UserID = ?'
+        scores_query = 'UPDATE Scores SET Name = ?, Points = ?, Snipes = ?, Deaths = ?, Respawn = ?, Revenge = ?, RevengeTime = ?, Killstreak = ?, KillstreakRecord = ? WHERE UserID = ? AND Guild = ?'
+        snipingmods_query = 'UPDATE SnipingMods SET Name = ?, Multiplier = ?, MultiExpiration = ?, SmokeBomb = ?, Immunity = ? WHERE UserID = ? AND Guild = ?'
 
         async with aiosqlite.connect(Database.DATABASE) as db:
             await db.execute(scores_query, scores_info)
@@ -242,6 +245,13 @@ class Sniper():
 
         self.killstreak_record = killstreak_record
         self.killstreak += kills
+
+    async def use_smokebomb(self):
+        if self.smokebomb > 0:
+            self.smokebomb -= 1
+            expiration = datetime.now() + timedelta(hours=3)
+
+            await self.set_immunity(expiration.timestamp())
 
     def is_immune(self):
         return self.immunity and self.immunity > datetime.now().timestamp()

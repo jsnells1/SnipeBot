@@ -78,7 +78,8 @@ class Admin(commands.Cog):
         user = await Sniper.from_database(user.id, ctx.guid.id, user.display_name)
 
         try:
-            user.add_points(amount)
+            user.points += amount
+            await user.update()
             msg = '```User points added.```'
         except:
             msg = '```Potential Error - User could not be updated.```'

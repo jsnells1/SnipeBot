@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import aiosqlite
 
 from data import api as Database
@@ -9,6 +11,21 @@ class Package():
         self.expiration = expiration
         self.keyword = keyword
         self.hint = hint
+
+    @classmethod
+    async def remove_expired(cls):
+        now = datetime.now().timestamp()
+
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute('SELECT Guild, Key FROM CarePackage WHERE Expiration < ?', (now,)) as cursor:
+                rows = await cursor.fetchall()
+
+            if len(rows) > 0:
+                await db.execute('DELETE FROM CarePackage WHERE Expiration < ?', (now,))
+                await db.commit()
+
+            return rows
 
     @classmethod
     async def get_all(cls, guild):
