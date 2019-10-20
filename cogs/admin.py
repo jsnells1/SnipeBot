@@ -3,10 +3,9 @@ import os
 import discord
 import discord.ext.commands as commands
 
-from cogs.utils.sniper import Sniper
-
-from cogs.utils import db
+import cogs.utils.db as Database
 from cogs.utils.db import Environment
+from cogs.utils.sniper import Sniper
 
 
 class Admin(commands.Cog):
