@@ -3,7 +3,7 @@ import aiosqlite
 from tabulate import tabulate
 from discord.ext import commands
 
-from data import api as Database
+import cogs.utils.db as Database
 
 
 class Leaderboard():

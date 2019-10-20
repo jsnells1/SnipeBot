@@ -1,12 +1,15 @@
 import logging
 from datetime import datetime
 
+import aiosqlite
+import discord
 import discord.ext.commands as commands
 
+import cogs.utils.db as Database
 import cogs.utils.rewards as Rewards
 from cogs.utils.carepackage import Package
+from cogs.utils.rewards import Reward
 from cogs.utils.sniper import Sniper
-from data import api as Database
 
 log = logging.getLogger(__name__)
 
@@ -17,13 +20,14 @@ class CarePackage(commands.Cog):
 
     @commands.command(name='smoke_bomb', hidden=True)
     async def use_smoke_bomb(self, ctx: commands.Context):
-        if Database.has_smoke_bomb(ctx.author.id):
-            if Database.use_smoke_bomb(ctx.author.id):
-                await ctx.send(ctx.author.display_name + ' has used a smoke bomb and is now immune for the next 3 hours!')
-            else:
-                await ctx.send('Error using smoke bomb.')
-        else:
-            await ctx.send('You don\'t have a smoke bomb to use!')
+        sniper = await Sniper.from_database(ctx.author.id, ctx.guild.id, ctx.author.display_name)
+
+        if sniper:
+            if sniper.smokebomb > 0:
+                await sniper.use_smokebomb()
+                return await ctx.send(f'{ctx.author.display_name} has used a smoke bomb and is now immune for the next 3 hours!')
+
+        return await ctx.send('You don\'t have a smoke bomb to use!')
 
     @commands.command(name='set_carepackage', hidden=True)
     @commands.has_role(item="Dev Team")
@@ -49,12 +53,15 @@ class CarePackage(commands.Cog):
 
     @commands.command(name='get_rewards')
     async def get_carepackage_rewards(self, ctx: commands.Context):
-        rewards = Database.get_rewards()
+        rewards = []
+        async with aiosqlite.connect(Database.DATABASE) as db:
+            async with db.execute('SELECT Name, Description FROM CarePackageRwds') as cursor:
+                rewards = await cursor.fetchall()
 
         sendingStr = ''
 
         for reward in rewards:
-            sendingStr += reward[0] + '\n\t\u2192 ' + reward[1] + '\n'
+            sendingStr += f'{reward[0]}\n\t\u2192 {reward[1]}\n'
 
         await ctx.send('```' + sendingStr + '```')
 
@@ -85,16 +92,15 @@ class CarePackage(commands.Cog):
         if not success:
             return await ctx.send(f'Sorry {ctx.author.display_name}, that is not the keyword.')
 
-        reward = Database.get_random_reward()
-        msg = Rewards.get_reward(reward[0], ctx.author)
+        reward = await Reward.get_random()
+        msg = await Rewards.get_reward(reward.id, ctx.author)
 
         await ctx.send(f'{ctx.author.display_name} guessed the keyword correctly! You open the care package and earn {msg}!')
 
     @commands.command(name='give_carepackage', hidden=True)
     @commands.has_role(item='Dev Team')
-    async def give_carepackage(self, ctx: commands.Context, member):
-
-        reward = Database.get_random_reward()
-        msg = Rewards.get_reward(reward[0], ctx.author)
+    async def give_carepackage(self, ctx: commands.Context, member: discord.Member):
+        reward = await Reward.get_random()
+        msg = await Rewards.get_reward(reward.id, ctx.author)
 
         await ctx.send(f'{member.display_name} opens the care package and earn {msg}!')

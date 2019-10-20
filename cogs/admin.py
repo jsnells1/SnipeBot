@@ -5,8 +5,8 @@ import discord.ext.commands as commands
 
 from cogs.utils.sniper import Sniper
 
-from data import api as Database
-from data.api import Environment
+from cogs.utils import db
+from cogs.utils.db import Environment
 
 
 class Admin(commands.Cog):
@@ -57,34 +57,29 @@ class Admin(commands.Cog):
     @commands.command(name='SetSnipes', hidden=True)
     @commands.has_role(item='Dev Team')
     async def setSnipes(self, ctx: commands.Context, user: discord.Member, amount: int):
-        response = Database.setSnipes(user.id, amount)
+        user = await Sniper.from_database(user.id, user.guild, user.display_name, register=True)
+        user.snipes = amount
 
-        msg = '```User snipes updated.```'
-
-        if not response:
-            msg = '```Potential Error - User could not be updated.```'
-
-        await ctx.send(msg)
+        await user.update()
+        await ctx.send('Done')
 
     @commands.command(name='SetPoints', hidden=True)
     @commands.has_role(item='Dev Team')
     async def setPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
-        response = Database.setPoints(user.id, amount)
+        user = await Sniper.from_database(user.id, user.guild, user.display_name, register=True)
+        user.points = amount
 
-        msg = '```User points updated.```'
-
-        if not response:
-            msg = '```Potential Error - User could not be updated.```'
-
-        await ctx.send(msg)
+        await user.update()
+        await ctx.send('Done')
 
     @commands.command(name='AddPoints', hidden=True)
     @commands.has_role(item='Dev Team')
     async def addPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
-        user = Sniper.from_database(user.id, ctx.guid.id, user.display_name)
+        user = await Sniper.from_database(user.id, ctx.guid.id, user.display_name)
 
         try:
-            user.add_points(amount)
+            user.points += amount
+            await user.update()
             msg = '```User points added.```'
         except:
             msg = '```Potential Error - User could not be updated.```'
@@ -94,14 +89,11 @@ class Admin(commands.Cog):
     @commands.command(name='SetDeaths', hidden=True)
     @commands.has_role(item='Dev Team')
     async def setDeaths(self, ctx: commands.Context, user: discord.Member, amount: int):
-        response = Database.setDeaths(user.id, amount)
+        user = await Sniper.from_database(user.id, user.guild, user.display_name, register=True)
+        user.deaths = amount
 
-        msg = '```User deaths updated.```'
-
-        if not response:
-            msg = '```Potential Error - User could not be updated.```'
-
-        await ctx.send(msg)
+        await user.update()
+        await ctx.send('Done')
 
     @commands.command(name='switchDB', hidden=True)
     @commands.has_role(item="Dev Team")
@@ -179,10 +171,15 @@ class Admin(commands.Cog):
 
         await ctx.author.send('', files=[dev_db, live_db])
 
-    @commands.command(name='update_scores_names')
+    @commands.command(name='update_names')
     @commands.has_role(item='Dev Team')
-    async def update_scores_names(self, ctx: commands.Context):
-        if Database.update_scores_names(ctx.guild.members):
-            await ctx.send('```Usernames updated.```')
-        else:
-            await ctx.send('```Usernames failed to be updated.```')
+    async def update_names(self, ctx: commands.Context):
+        num_updated = 0
+
+        for member in ctx.guild.members:
+            if await Sniper.exists(member.id, member.guild.id):
+                user = await Sniper.from_database(member.id, member.guild.id, member.display_name)
+                await user.update()
+                num_updated += 1
+
+        await ctx.send(f'Done - Updated {num_updated} member(s)')

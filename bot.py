@@ -8,7 +8,7 @@ from cogs.admin import Admin
 from cogs.carepackage import CarePackage
 from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
-from data import api
+from cogs.utils import db
 
 log = logging.getLogger(__name__)
 BOT_PREFIX = '!'
@@ -41,5 +41,5 @@ class SnipeBot(commands.Bot):
             return await ctx.send(f'MissingRequiredArgument: {error}')
 
     async def on_ready(self):
-        log.info('Bot started: Database: ' + api.DATABASE)
-        print('Ready. Database: ' + api.DATABASE)
+        log.info('Bot started: Database: ' + db.DATABASE)
+        print('Ready. Database: ' + db.DATABASE)
