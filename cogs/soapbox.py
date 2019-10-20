@@ -119,7 +119,7 @@ class Soapbox(commands.Cog):
 
         try:
             response = await self.bot.wait_for('message', check=check, timeout=10)
-        except:
+        except Exception:
             await ctx.send("Timeout reached. Operation aborted")
             return
 

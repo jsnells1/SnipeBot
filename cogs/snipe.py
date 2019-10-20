@@ -3,7 +3,6 @@ import collections
 import logging
 from datetime import datetime
 
-import aiosqlite
 import discord
 import discord.ext.commands as commands
 from discord import utils
