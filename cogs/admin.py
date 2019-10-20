@@ -110,13 +110,13 @@ class Admin(commands.Cog):
         else:
             await ctx.send('Error changing database.')
 
-    @commands.command(name='db_env', hidden=True)
+    @commands.command(name='db_env', aliases=['env', 'environment'], hidden=True)
     @commands.has_role(item='Dev Team')
     async def db_environment(self, ctx: commands.Context, env=None):
         if Database.DATABASE == Database.DEV_DATABASE:
-            await ctx.send('```Dev```')
+            await ctx.send('**Dev**')
         else:
-            await ctx.send('```Live```')
+            await ctx.send('**Live**')
 
     @commands.command(name='update_names')
     @commands.has_role(item='Dev Team')
