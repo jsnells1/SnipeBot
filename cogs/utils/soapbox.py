@@ -1,7 +1,7 @@
 import aiosqlite
 from datetime import datetime
 
-import data.api as Database
+import cogs.utils.db as Database
 
 
 class SoapboxEntry:

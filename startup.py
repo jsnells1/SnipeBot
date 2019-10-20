@@ -6,7 +6,7 @@ import sys
 
 import config
 from bot import SnipeBot
-from data import api
+import cogs.utils.db as Database
 
 log = logging.getLogger()
 
@@ -35,9 +35,9 @@ def read_env_vars():
 
     if args.env is not None:
         if args.env == 'dev':
-            api.switch_database(api.Environment.DEV)
+            Database.switch_database(Database.Environment.DEV)
         elif args.env == 'live':
-            api.switch_database(api.Environment.LIVE)
+            Database.switch_database(Database.Environment.LIVE)
 
 
 def main():

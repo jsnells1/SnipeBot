@@ -5,11 +5,11 @@ import aiosqlite
 import discord
 import discord.ext.commands as commands
 
-from cogs.utils.rewards import Reward
+import cogs.utils.db as Database
 import cogs.utils.rewards as Rewards
 from cogs.utils.carepackage import Package
+from cogs.utils.rewards import Reward
 from cogs.utils.sniper import Sniper
-from data import api as Database
 
 log = logging.getLogger(__name__)
 

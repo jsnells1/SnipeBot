@@ -5,8 +5,8 @@ import discord.ext.commands as commands
 
 from cogs.utils.sniper import Sniper
 
-from data import api as Database
-from data.api import Environment
+from cogs.utils import db
+from cogs.utils.db import Environment
 
 
 class Admin(commands.Cog):

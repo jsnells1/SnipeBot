@@ -9,10 +9,10 @@ import discord.ext.commands as commands
 from discord import utils
 from discord.ext import tasks
 
+import cogs.utils.db as Database
 from cogs.utils.carepackage import Package
 from cogs.utils.leaderboard import Leaderboard
 from cogs.utils.sniper import Sniper
-from data import api as Database
 
 log = logging.getLogger(__name__)
 

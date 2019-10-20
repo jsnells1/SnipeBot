@@ -12,15 +12,15 @@ def switch_database(env):
     global LIVE_DATABASE
     global DEV_DATABASE
 
-    do_change = False
+    changed = False
     if env == Environment.LIVE:
         DATABASE = LIVE_DATABASE
-        do_change = True
+        changed = True
     elif env == Environment.DEV:
         DATABASE = DEV_DATABASE
-        do_change = True
+        changed = True
 
-    return do_change
+    return changed
 
 
 class Environment (Enum):

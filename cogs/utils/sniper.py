@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import aiosqlite
 import discord
 
-import data.api as Database
+import cogs.utils.db as Database
 from cogs.utils.formatting import formatSnipeString
 from cogs.utils.leaderboard import Leaderboard
 

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import aiosqlite
 
 from cogs.utils.sniper import Sniper
-from data import api as Database
+import cogs.utils.db as Database
 
 
 class Reward():

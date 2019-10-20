@@ -2,7 +2,7 @@ from datetime import datetime
 
 import aiosqlite
 
-from data import api as Database
+import cogs.utils.db as Database
 
 
 class Package():
