@@ -64,20 +64,6 @@ class Admin(commands.Cog):
         await user.update()
         await ctx.send('Done')
 
-    @commands.command(name='AddPoints', hidden=True)
-    @commands.has_role(item='Dev Team')
-    async def addPoints(self, ctx: commands.Context, user: discord.Member, amount: int):
-        user = await Sniper.from_database(user.id, ctx.guid.id, user.display_name)
-
-        try:
-            user.points += amount
-            await user.update()
-            msg = '```User points added.```'
-        except:
-            msg = '```Potential Error - User could not be updated.```'
-
-        await ctx.send(msg)
-
     @commands.command(name='SetDeaths', hidden=True)
     @commands.has_role(item='Dev Team')
     async def setDeaths(self, ctx: commands.Context, user: discord.Member, amount: int):
