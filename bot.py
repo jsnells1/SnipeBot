@@ -9,6 +9,7 @@ from cogs.carepackage import CarePackage
 from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
 from cogs.utils import db
+from cogs.utils.help import CustomHelpCommand
 
 log = logging.getLogger(__name__)
 
@@ -16,8 +17,8 @@ log = logging.getLogger(__name__)
 class SnipeBot(commands.Bot):
     def __init__(self, config):
         prefix = '!'
-        super().__init__(command_prefix=prefix, case_insensitive=True,
-                         activity=discord.Activity(type=discord.ActivityType.playing, name='Logan\'s SI Session'))
+        super().__init__(command_prefix=prefix, case_insensitive=True, help_command=CustomHelpCommand(),
+                         activity=discord.Activity(type=discord.ActivityType.watching, name='!snipebot for help'))
 
         self.config = config
 
