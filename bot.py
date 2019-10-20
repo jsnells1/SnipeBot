@@ -6,6 +6,7 @@ import discord.ext.commands as commands
 
 from cogs.admin import Admin
 from cogs.carepackage import CarePackage
+from cogs.owner import Owner
 from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
 from cogs.utils import db
@@ -31,6 +32,7 @@ class SnipeBot(commands.Bot):
         self.add_cog(Soapbox(self))
         self.add_cog(Snipes(self, day, start, end))
         self.add_cog(Admin(self))
+        self.add_cog(Owner(self))
         self.add_cog(CarePackage(self))
 
     async def on_command_error(self, ctx, error):

@@ -10,11 +10,6 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(hidden=True)
-    @commands.is_owner()
-    async def shutdown(self, ctx):
-        await self.bot.logout()
-
     @commands.command(name='remove_user', brief='(Admin-Only) Removes a user from the sniping leaderboard')
     @commands.has_role(item='Dev Team')
     async def removeUser(self, ctx: commands.Context, member: discord.Member):
@@ -122,14 +117,6 @@ class Admin(commands.Cog):
             await ctx.send('```Dev```')
         else:
             await ctx.send('```Live```')
-
-    @commands.command(name='backup_db')
-    @commands.is_owner()
-    async def backup_db(self, ctx: commands.Context):
-        dev_db = discord.File(fp='./data/dev_database.db')
-        live_db = discord.File(fp='./data/database.db')
-
-        await ctx.author.send('', files=[dev_db, live_db])
 
     @commands.command(name='update_names')
     @commands.has_role(item='Dev Team')
