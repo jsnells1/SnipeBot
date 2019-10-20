@@ -37,7 +37,7 @@ class SnipeBot(commands.Bot):
         if isinstance(error, commands.CommandNotFound):
             return
 
-        log.info("Error caused by message: `{}`".format(ctx.message.content))
+        log.info(f"Error caused by message: `{ctx.message.content}`")
         log.info(''.join(traceback.format_exception_only(type(error), error)))
 
         if isinstance(error, commands.CommandInvokeError):
