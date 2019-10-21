@@ -106,6 +106,9 @@ class Snipes(commands.Cog):
         if 'snipebot' not in ctx.channel.name:
             return await ctx.send('Please use the snipebot channel for sniping :)')
 
+        if ctx.author.id in self.whitelist:
+            return await ctx.send('You cannot snipe while on the whitelist.')
+
         today = datetime.now()
 
         if today.weekday() == self.club_day and today.hour >= self.club_start and today.hour < self.club_end:
