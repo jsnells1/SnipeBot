@@ -97,7 +97,7 @@ class Snipes(commands.Cog):
         await self.bot.wait_until_ready()
 
     # region Register Snipes
-    @commands.command(brief='Registers a snipe from the calling user to the mentioned user', usage='@TargetUser @TargetUser',
+    @commands.command(brief='Registers a snipe on all mentioned users', usage='@TargetUser @TargetUser',
                       help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipe(self, ctx: commands.Context):
 
@@ -147,7 +147,8 @@ class Snipes(commands.Cog):
         await ctx.send(f'```{output}```')
 
     # Adds are removes the user from the whitelist
-    @commands.command(name='sbwhitelist')
+    @commands.command(name='sbwhitelist', brief='Toggles the user\'s presence on the sniping whitelist',
+                      help='When on the whitelist, you cannot snipe or be sniped')
     async def toggle_whitelist(self, ctx: commands.Context):
         user = ctx.author.id
 
@@ -161,3 +162,9 @@ class Snipes(commands.Cog):
         with open('whitelist', 'w') as f:
             for i in self.whitelist:
                 f.write(f'{i}\n')
+
+    @commands.command(name='getwhitelist', brief='Lists all users currently on the whitelist')
+    async def get_whitelist(self, ctx: commands.Context):
+        users = [user.display_name for user in (ctx.guild.get_member(id) for id in self.whitelist) if user is not None]
+
+        await ctx.send(f"Whitelisted users: {', '.join(users)}")

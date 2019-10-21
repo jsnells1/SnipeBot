@@ -13,7 +13,7 @@ class Owner(commands.Cog):
     async def shutdown(self, ctx):
         await self.bot.logout()
 
-    @commands.command(name='backup_db')
+    @commands.command(name='backup_db', hidden=True)
     @commands.is_owner()
     async def backup_db(self, ctx: commands.Context):
         dev_db = discord.File(fp='./data/dev_database.db')
