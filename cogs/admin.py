@@ -110,9 +110,10 @@ class Admin(commands.Cog):
         num_updated = 0
 
         for member in ctx.guild.members:
-            if await Sniper.exists(member.id, member.guild.id):
+            if not member.bot:
                 user = await Sniper.from_database(member.id, member.guild.id, member.display_name)
-                await user.update()
-                num_updated += 1
+                if user:
+                    await user.update()
+                    num_updated += 1
 
         await ctx.send(f'Done - Updated {num_updated} member(s)')
