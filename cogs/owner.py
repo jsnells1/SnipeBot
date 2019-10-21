@@ -1,6 +1,8 @@
 import discord
 import discord.ext.commands as commands
 
+import cogs.utils.db as Database
+
 
 class Owner(commands.Cog):
     def __init__(self, bot):
@@ -18,3 +20,26 @@ class Owner(commands.Cog):
         live_db = discord.File(fp='./data/database.db')
 
         await ctx.author.send('', files=[dev_db, live_db])
+
+    @commands.command(name='switchDB', hidden=True)
+    @commands.is_owner()
+    async def switchDB(self, ctx: commands.Context, env=None):
+        if env is None:
+            await ctx.send('Please pass the environment to switch to (live/dev)')
+            return
+
+        if env == 'live':
+            dbEnv = Database.Environment.LIVE
+        elif env == 'dev':
+            dbEnv = Database.Environment.DEV
+        else:
+            await ctx.send('Invalid argument.')
+            return
+
+        response = Database.switch_database(dbEnv)
+
+        if response:
+            await ctx.send('Database successfully changed.')
+            print('Database: ' + Database.DATABASE)
+        else:
+            await ctx.send('Error changing database.')

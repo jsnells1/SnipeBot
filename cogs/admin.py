@@ -2,7 +2,6 @@ import discord
 import discord.ext.commands as commands
 
 import cogs.utils.db as Database
-from cogs.utils.db import Environment
 from cogs.utils.sniper import Sniper
 
 
@@ -72,29 +71,6 @@ class Admin(commands.Cog):
 
         await user.update()
         await ctx.send('Done')
-
-    @commands.command(name='switchDB', hidden=True)
-    @commands.has_role(item="Dev Team")
-    async def switchDB(self, ctx: commands.Context, env=None):
-        if env is None:
-            await ctx.send('Please pass the environment to switch to (live/dev)')
-            return
-
-        if env == 'live':
-            dbEnv = Environment.LIVE
-        elif env == 'dev':
-            dbEnv = Environment.DEV
-        else:
-            await ctx.send('Invalid argument.')
-            return
-
-        response = Database.switch_database(dbEnv)
-
-        if response:
-            await ctx.send('Database successfully changed.')
-            print('Database: ' + Database.DATABASE)
-        else:
-            await ctx.send('Error changing database.')
 
     @commands.command(name='db_env', aliases=['env', 'environment'], hidden=True)
     @commands.has_role(item='Dev Team')
