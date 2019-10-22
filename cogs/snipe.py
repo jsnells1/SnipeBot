@@ -96,7 +96,6 @@ class Snipes(commands.Cog):
     async def before_maintenance(self):
         await self.bot.wait_until_ready()
 
-    # region Register Snipes
     @commands.command(brief='Registers a snipe on all mentioned users', usage='@TargetUser @TargetUser',
                       help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipe(self, ctx: commands.Context):
@@ -141,7 +140,6 @@ class Snipes(commands.Cog):
         sniper = await Sniper.from_database(sniper.id, ctx.guild.id, sniper.display_name, register=True)
 
         await ctx.send(await sniper.snipe(ctx, targets))
-    # endregion
 
     # Returns the current Leaderboard
     @commands.command(brief='Returns the Top 10 users sorted by snipes')
@@ -157,10 +155,10 @@ class Snipes(commands.Cog):
 
         if user in self.whitelist:
             self.whitelist.remove(user)
-            await ctx.send('```You\'ve been removed from the whitelist```')
+            await ctx.send('You\'ve been **removed** from the whitelist')
         else:
             self.whitelist.append(user)
-            await ctx.send('```You\'ve been added to the whitelist```')
+            await ctx.send('You\'ve been **added** to the whitelist')
 
         with open('whitelist', 'w') as f:
             for i in self.whitelist:
