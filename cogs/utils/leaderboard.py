@@ -40,6 +40,7 @@ class Leaderboard():
         records.append(['Streak', killstreak_holder, killstreak_record])
 
         output = tabulate(records, headers='firstrow', tablefmt='fancy_grid') + '\n\n'
+        output += 'P=Points, S=Snipes, D=Deaths\n'
         output += tabulate(outputRows, headers='firstrow', tablefmt='fancy_grid')
         return output
 
