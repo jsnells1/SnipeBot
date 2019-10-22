@@ -142,14 +142,13 @@ class Snipes(commands.Cog):
         await ctx.send(await sniper.snipe(ctx, targets))
 
     # Returns the current Leaderboard
-    @commands.command(brief='Returns the Top 10 users sorted by snipes')
+    @commands.command(help='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
         output = await Leaderboard(ctx).get_leaderboard()
         await ctx.send(f'```{output}```')
 
     # Adds are removes the user from the whitelist
-    @commands.command(name='sbwhitelist', brief='Toggles the user\'s presence on the sniping whitelist',
-                      help='When on the whitelist, you cannot snipe or be sniped')
+    @commands.command(name='sbwhitelist', help='Toggles the user\'s presence on the sniping whitelist. When on the whitelist, you cannot snipe or be sniped')
     async def toggle_whitelist(self, ctx: commands.Context):
         user = ctx.author.id
 
@@ -164,7 +163,7 @@ class Snipes(commands.Cog):
             for i in self.whitelist:
                 f.write(f'{i}\n')
 
-    @commands.command(name='getwhitelist', brief='Lists all users currently on the whitelist')
+    @commands.command(name='getwhitelist', help='Lists all users currently on the whitelist')
     async def get_whitelist(self, ctx: commands.Context):
         users = [user.display_name for user in (ctx.guild.get_member(id) for id in self.whitelist) if user is not None]
 
