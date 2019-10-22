@@ -111,7 +111,7 @@ class Snipes(commands.Cog):
 
         today = datetime.now()
 
-        if today.weekday() == self.club_day and today.hour >= self.club_start and today.hour < self.club_end:
+        if today.weekday() == self.club_day and (self.club_start <= today.hour < self.club_end):
             return await ctx.send(f'Sniping disabled during club hours: {calendar.day_name[self.club_day]} from {self.club_start}:00 to {self.club_end}:00 (Military Time)')
 
         if len(targets) == 0:
