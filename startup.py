@@ -28,7 +28,7 @@ def setup_logging():
 
 def read_env_vars():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-dev', action='store_true', help='use the dev da')
+    parser.add_argument('-dev', action='store_true', help='use the dev database')
     args = parser.parse_args()
 
     Database.switch_database(Database.Environment.LIVE)
