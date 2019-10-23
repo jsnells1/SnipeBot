@@ -2,8 +2,6 @@ import argparse
 import json
 import logging
 import logging.handlers
-import os
-import sys
 
 import cogs.utils.db as Database
 from bot import SnipeBot
@@ -11,17 +9,10 @@ from bot import SnipeBot
 log = logging.getLogger()
 
 
-def create_log_dir():
-    try:
-        os.makedirs('./log', exist_ok=True)
-    except OSError:
-        sys.exit('Log directory does not exist and cannot be created')
-
-
 def setup_logging():
     logging.getLogger('discord').setLevel(logging.WARNING)
     log.setLevel(level=logging.INFO)
-    handler = logging.handlers.RotatingFileHandler(filename='./log/snipebot.log', encoding='utf-8', maxBytes=10485760, backupCount=5)
+    handler = logging.handlers.RotatingFileHandler(filename='snipebot.log', encoding='utf-8', maxBytes=10485760, backupCount=5)
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
     log.addHandler(handler)
 
@@ -37,7 +28,6 @@ def read_env_vars():
 
 
 def main():
-    create_log_dir()
     setup_logging()
     read_env_vars()
 
