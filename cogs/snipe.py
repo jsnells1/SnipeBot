@@ -40,7 +40,7 @@ class Snipes(commands.Cog):
         await Sniper.remove_expired_revenges()
 
         # Get the list of respawns, spud explosions, immunity expiration, and carepackage expirations
-        respawns = await Sniper.get_respawns
+        respawns = await Sniper.get_respawns()
         explosions = await Sniper.get_exploded_potatoes()
         expirations = await Sniper.get_expired_immunes()
         expired_carepackages = await Package.remove_expired()
