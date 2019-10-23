@@ -28,13 +28,12 @@ def setup_logging():
 
 def read_env_vars():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-env')
+    parser.add_argument('-dev', action='store_true', help='use the dev da')
     args = parser.parse_args()
 
     Database.switch_database(Database.Environment.LIVE)
-    if args.env is not None:
-        if args.env == 'dev':
-            Database.switch_database(Database.Environment.DEV)
+    if args.dev:
+        Database.switch_database(Database.Environment.DEV)
 
 
 def main():
