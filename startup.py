@@ -11,6 +11,7 @@ from bot import SnipeBot
 @contextlib.contextmanager
 def setup_logging():
     try:
+        # __enter__
         logging.getLogger('discord').setLevel(logging.WARNING)
 
         log = logging.getLogger()
@@ -22,6 +23,7 @@ def setup_logging():
         log.addHandler(handler)
         yield
     finally:
+        # __exit__
         handlers = log.handlers[:]
         for hdlr in handlers:
             hdlr.close()
@@ -37,12 +39,10 @@ def main():
     if args.dev:
         Database.switch_database(Database.Environment.DEV)
 
-    # Read and Verify config
     with open('config.json') as config_file:
         config = json.load(config_file)
 
     with setup_logging():
-        # Initialize and Run bot
         bot = SnipeBot(config)
 
         bot.run()
