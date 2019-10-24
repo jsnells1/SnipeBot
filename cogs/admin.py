@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 import discord.ext.commands as commands
 
@@ -25,15 +27,14 @@ class Admin(commands.Cog):
 
         try:
             response = await self.bot.wait_for('message', check=check, timeout=10)
-        except:
-            await ctx.send('Timeout reached. User lived to fight another day.')
-            return
+        except asyncio.TimeoutError:
+            return await ctx.send('Timeout reached. User lived to fight another day.')
 
         if response.content == 'Y' or response.content == 'y':
             try:
                 await Sniper.remove_user(member.id, member.guild.id)
                 await ctx.send('User removed.')
-            except:
+            except Exception:
                 await ctx.send('Error: User failed to be removed.')
         else:
             await ctx.send('User lives to fight another day.')
