@@ -36,10 +36,7 @@ class Owner(commands.Cog):
             await ctx.send('Invalid argument.')
             return
 
-        response = Database.switch_database(dbEnv)
+        Database.switch_database(dbEnv)
 
-        if response:
-            await ctx.send('Database successfully changed.')
-            print('Database: ' + Database.DATABASE)
-        else:
-            await ctx.send('Error changing database.')
+        await ctx.send('Database successfully changed.')
+        print('Database: ' + Database.DATABASE)
