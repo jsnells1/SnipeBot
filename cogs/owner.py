@@ -16,8 +16,8 @@ class Owner(commands.Cog):
     @commands.command(name='backup_db', hidden=True)
     @commands.is_owner()
     async def backup_db(self, ctx: commands.Context):
-        dev_db = discord.File(fp='./data/dev_database.db')
-        live_db = discord.File(fp='./data/database.db')
+        dev_db = discord.File(fp=Database.DEV_DATABASE)
+        live_db = discord.File(fp=Database.LIVE_DATABASE)
 
         await ctx.author.send('', files=[dev_db, live_db])
 
