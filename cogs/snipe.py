@@ -144,7 +144,10 @@ class Snipes(commands.Cog):
     # Returns the current Leaderboard
     @commands.command(help='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
-        output = await Leaderboard(ctx).get_leaderboard()
+        leaderboard = await Leaderboard.load(ctx)
+
+        output = await leaderboard.display_leaderboard()
+
         await ctx.send(f'```{output}```')
 
     # Adds are removes the user from the whitelist
