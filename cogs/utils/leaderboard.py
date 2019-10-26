@@ -1,7 +1,5 @@
 import aiosqlite
-
 from tabulate import tabulate
-from discord.ext import commands
 
 import cogs.utils.db as Database
 
@@ -11,8 +9,7 @@ class NotLoadedException(Exception):
 
 
 class Leaderboard():
-    def __init__(self, ctx: commands.Context):
-        self.ctx = ctx
+    def __init__(self):
         self.killstreak_record_holder = 'None'
         self.killstreak_record = 'None'
         self.users = 0
@@ -21,8 +18,8 @@ class Leaderboard():
         self._loaded = False
 
     @classmethod
-    async def load(cls, ctx: commands.Context):
-        leaderboard = cls(ctx)
+    async def load(cls):
+        leaderboard = cls()
 
         await leaderboard._load_rows()
         await leaderboard._load_killstreak_record()
@@ -42,14 +39,12 @@ class Leaderboard():
     async def _load_killstreak_record(self):
         async with aiosqlite.connect(Database.DATABASE) as db:
             db.row_factory = aiosqlite.Row
-            query = 'SELECT UserID, KillstreakRecord FROM Scores ORDER BY KillstreakRecord DESC LIMIT 1'
+            query = 'SELECT Name, KillstreakRecord FROM Scores ORDER BY KillstreakRecord DESC LIMIT 1'
             async with db.execute(query) as cursor:
                 row = await cursor.fetchone()
 
                 if row:
-                    user = self.ctx.guild.get_member(row['UserID'])
-
-                    self.killstreak_record_holder = user.display_name[0:8]
+                    self.killstreak_record_holder = row['Name'][0:8]
                     self.killstreak_record = row['KillstreakRecord']
 
     async def _load_rows(self):

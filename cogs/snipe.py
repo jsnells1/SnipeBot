@@ -144,7 +144,7 @@ class Snipes(commands.Cog):
     # Returns the current Leaderboard
     @commands.command(help='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
-        leaderboard = await Leaderboard.load(ctx)
+        leaderboard = await Leaderboard.load()
 
         output = leaderboard.display_leaderboard()
 

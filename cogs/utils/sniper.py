@@ -218,7 +218,7 @@ class Sniper():
         # Convert targets to list of Sniper objects, ignoring bots
         targets = [await Sniper.from_database(target.id, ctx.guild.id, target.display_name, register=True) for target in targets if not target.bot]
 
-        leaderboard = await Leaderboard.load(ctx)
+        leaderboard = await Leaderboard.load()
         leader_id = leaderboard.get_leader_id()
 
         bonusPoints = 0
