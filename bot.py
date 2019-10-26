@@ -47,7 +47,10 @@ class SnipeBot(commands.Bot):
         elif isinstance(error, (commands.MissingPermissions, commands.CheckFailure)):
             return await ctx.send(error)
         elif isinstance(error, commands.BadArgument):
-            return await ctx.send(f'BadArgument: {error}')
+            error_string = f'BadArgument: {error}'
+            if ctx.command.usage:
+                error_string += f'\nUsage: {ctx.prefix}{ctx.invoked_with} {ctx.command.usage}'
+            return await ctx.send(error_string)
         elif isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f'MissingRequiredArgument: {error}')
 
