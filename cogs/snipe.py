@@ -146,7 +146,7 @@ class Snipes(commands.Cog):
     async def leaderboard(self, ctx: commands.Context):
         leaderboard = await Leaderboard.load(ctx)
 
-        output = await leaderboard.display_leaderboard()
+        output = leaderboard.display_leaderboard()
 
         await ctx.send(f'```{output}```')
 

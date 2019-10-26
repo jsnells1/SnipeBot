@@ -73,22 +73,17 @@ class Leaderboard():
 
         return self.rows[0]['UserID']
 
-    async def display_leaderboard(self):
+    def display_leaderboard(self):
         if not self._loaded:
             raise NotLoadedException('load method not yet called')
 
-        outputRows = [['Name', 'P', 'S', 'D']]
+        records_header = ['Record', 'User', '']
+        records = [['Streak', self.killstreak_record_holder, self.killstreak_record]]
 
-        for row in self.rows:
-            user = await commands.MemberConverter().convert(self.ctx, str(row['UserID']))
+        leaderboard_headers = ['Name', 'P', 'S', 'D']
+        leaderboard_rows = [[row['Name'][0:8], row['Points'], row['Snipes'], row['Deaths']] for row in self.rows]
 
-            outputRows.append([user.display_name[0:8], str(row['Points']), str(row['Snipes']), str(row['Deaths'])])
-
-        records = [['Record', 'User', '']]
-
-        records.append(['Streak', self.killstreak_record_holder, self.killstreak_record])
-
-        output = tabulate(records, headers='firstrow', tablefmt='fancy_grid') + '\n\n'
+        output = f'{tabulate(records, headers=records_header, tablefmt="fancy_grid")}\n\n'
         output += 'P=Points, S=Snipes, D=Deaths\n'
-        output += tabulate(outputRows, headers='firstrow', tablefmt='fancy_grid')
+        output += tabulate(leaderboard_rows, headers=leaderboard_headers, tablefmt='fancy_grid')
         return output
