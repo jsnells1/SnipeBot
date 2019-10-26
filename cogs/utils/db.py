@@ -19,5 +19,5 @@ def switch_database(env):
 
 
 class Environment (Enum):
-    DEV = 1
-    LIVE = 2
+    DEV = 'dev'
+    LIVE = 'live'
