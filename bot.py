@@ -10,7 +10,7 @@ from cogs.owner import Owner
 from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
 from cogs.utils import db
-from cogs.utils.help import CustomHelpCommand
+from cogs.help import CustomHelpCommand, Help
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +18,8 @@ log = logging.getLogger(__name__)
 class SnipeBot(commands.Bot):
     def __init__(self, config):
         prefix = '!'
-        super().__init__(command_prefix=prefix, case_insensitive=True, help_command=CustomHelpCommand(),
+        description = 'NEW USERS: Use !overview for a basic rundown on how to snipe someone'
+        super().__init__(command_prefix=prefix, case_insensitive=True, help_command=CustomHelpCommand(), description=description,
                          activity=discord.Activity(type=discord.ActivityType.watching, name='!snipebot for help'))
 
         self.config = config
@@ -34,6 +35,7 @@ class SnipeBot(commands.Bot):
         self.add_cog(Admin(self))
         self.add_cog(Owner(self))
         self.add_cog(CarePackage(self))
+        self.add_cog(Help(self))
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.CommandNotFound):
@@ -57,6 +59,10 @@ class SnipeBot(commands.Bot):
     async def on_ready(self):
         log.info('Bot started: Database: ' + db.DATABASE)
         print('Ready. Database: ' + db.DATABASE)
+
+    @commands.command()
+    async def overview(self, ctx):
+        await ctx.send('Overview')
 
     def run(self):
         super().run(self.config['token'])
