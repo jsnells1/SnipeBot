@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 
 import aiosqlite
 
-from cogs.utils.sniper import Sniper
 import cogs.utils.db as Database
+from cogs.utils.sniper import Sniper
 
 
 class Reward():
@@ -32,57 +32,38 @@ class Reward():
                 if row:
                     return cls(row['id'], row['Name'], row['Description'])
 
+    async def redeem(self, user):
+        if not isinstance(user, Sniper):
+            user = await Sniper.from_database(user.id, user.guild.id, user.display_name, register=True)
 
-async def set_bonus_points(user):
-    # id 1
-    bonus_points = 8
-    sniper = await Sniper.from_database(user.id, user.guild.id, user.display_name)
-    sniper.points += bonus_points
-    await sniper.update()
+        # 8 Bonus Points
+        if self.id == 1:
+            bonus_points = 8
 
-    return f'{bonus_points} bonus points immediately'
+            user.points += bonus_points
+            await user.update()
 
+            return f'{bonus_points} bonus points immediately'
+        # x3 Multiplier for 24 Hours
+        elif self.id == 2:
+            multiplier = 3
+            expiration = (datetime.now() + timedelta(hours=24)).timestamp()
 
-async def set_multiplier(user):
-    # id 2
-    multiplier = 3
-    expiration = datetime.now() + timedelta(hours=24)
+            user.multiplier = multiplier
+            user.multi_expiration = expiration
+            await user.update()
 
-    sniper = await Sniper.from_database(user.id, user.guild.id, user.display_name, register=True)
-    sniper.multiplier = 3
-    sniper.multi_expiration = expiration.timestamp()
+            return f'a x{multiplier} point multiplier for 24 hours'
+        # Smoke Bomb
+        elif self.id == 3:
+            user.smokebomb += 1
+            await user.update()
 
-    await sniper.update()
+            return 'a smoke bomb! Use it whenever you\'d like for 3 hours of immunity!'
+        # Hot Potato
+        elif self.id == 4:
+            expiration = (datetime.now() + timedelta(hours=24)).timestamp()
 
-    return f'a x{multiplier} point multiplier for 24 hours'
+            await user.give_potato(expiration)
 
-
-async def set_smoke_bomb(user):
-    # id 3
-    sniper = await Sniper.from_database(user.id, user.guild.id, user.display_name, register=True)
-    sniper.smokebomb += 1
-    await sniper.update()
-
-    return 'a smoke bomb! Use it whenever you\'d like for 3 hours of immunity!'
-
-
-async def set_hot_potato(user):
-    # id 4
-    expiration = datetime.now() + timedelta(hours=24)
-
-    sniper = await Sniper.from_database(user.id, user.guild.id, user.display_name, register=True)
-    await sniper.give_potato(expiration.timestamp())
-
-    return 'a... Hot Potato Bomb! Uh Oh! Snipe someone else to pass it to someone else before it explodes'
-
-
-function_map = {
-    1: set_bonus_points,
-    2: set_multiplier,
-    3: set_smoke_bomb,
-    4: set_hot_potato
-}
-
-
-async def get_reward(id, user):
-    return await function_map[id](user)
+            return 'a... Hot Potato Bomb! Uh Oh! Snipe someone else to pass it to someone else before it explodes'
