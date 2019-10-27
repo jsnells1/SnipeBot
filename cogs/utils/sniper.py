@@ -160,23 +160,6 @@ class Sniper():
 
             await db.commit()
 
-    async def reset_revenge(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE UserID = ?', (None, None, self.id))
-            await db.commit()
-
-            self.revenge = None
-            self.revenge_time = None
-
-    async def set_multiplier(self, multiplier, expiration=None):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE UserID = ? AND Guild = ?', (multiplier, expiration, self.id, self.guild))
-            await db.commit()
-
-    async def set_immunity(self, expiration):
-        self.immunity = expiration
-        await self.update()
-
     async def snipe(self, ctx, targets):
         hits = []
         immune = []
@@ -268,21 +251,12 @@ class Sniper():
             await db.execute(snipingmods_query, snipingmods_info)
             await db.commit()
 
-    async def update_killstreak(self, kills):
-        killstreak_record = max(self.killstreak + kills, self.killstreak_record)
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE Scores SET Killstreak = Killstreak + ?, KillstreakRecord = ? WHERE UserID = ?', (kills, killstreak_record, self.id))
-            await db.commit()
-
-        self.killstreak_record = killstreak_record
-        self.killstreak += kills
-
     async def use_smokebomb(self):
         if self.smokebomb > 0:
             self.smokebomb -= 1
             expiration = datetime.now() + timedelta(hours=3)
-
-            await self.set_immunity(expiration.timestamp())
+            self.immunity = expiration.timestamp()
+            await self.update()
 
     def is_immune(self):
         return self.immunity and self.immunity > datetime.now().timestamp()

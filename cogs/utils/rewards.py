@@ -32,6 +32,7 @@ class Reward():
                 if row:
                     return cls(row['id'], row['Name'], row['Description'])
 
+
 async def set_bonus_points(user):
     # id 1
     bonus_points = 8
@@ -48,7 +49,10 @@ async def set_multiplier(user):
     expiration = datetime.now() + timedelta(hours=24)
 
     sniper = await Sniper.from_database(user.id, user.guild.id, user.display_name, register=True)
-    await sniper.set_multiplier(multiplier, expiration=expiration.timestamp())
+    sniper.multiplier = 3
+    sniper.multi_expiration = expiration.timestamp()
+
+    await sniper.update()
 
     return f'a x{multiplier} point multiplier for 24 hours'
 
