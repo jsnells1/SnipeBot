@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import aiosqlite
 import discord
 
-import cogs.utils.db as Database
+from cogs.utils.db import Database
 from cogs.utils.formatting import SnipeFormatter
 from cogs.utils.leaderboard import Leaderboard
 
@@ -30,7 +30,7 @@ class Sniper():
 
     @classmethod
     async def exists(cls, id, guild):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             async with db.execute('SELECT 1 FROM Scores WHERE UserID = ? AND Guild = ?', (id, guild)) as cursor:
                 row = await cursor.fetchone()
 
@@ -53,7 +53,7 @@ class Sniper():
         if register:
             await sniper.register_self()
 
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             query = 'SELECT * FROM Scores s LEFT JOIN SnipingMods sm ON sm.UserID = s.UserID AND sm.Guild = s.Guild WHERE s.UserID = ? AND s.Guild = ?'
             async with db.execute(query, (id, guild)) as cursor:
@@ -83,7 +83,7 @@ class Sniper():
 
     @classmethod
     async def remove_user(cls, id, guild):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('DELETE FROM Scores WHERE UserID = ? AND Guild = ?', (id, guild))
             await db.execute('DELETE FROM SnipingMods WHERE UserID = ? AND Guild = ?', (id, guild))
 
@@ -91,7 +91,7 @@ class Sniper():
 
     @classmethod
     async def get_respawns(cls):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             date = datetime.now().timestamp()
             async with db.execute('SELECT Guild, UserID FROM Scores WHERE Respawn < ?', (date,)) as cursor:
                 rows = await cursor.fetchall()
@@ -104,7 +104,7 @@ class Sniper():
     @classmethod
     async def get_expired_immunes(cls):
         now = datetime.now().timestamp()
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute('SELECT Guild, UserID FROM SnipingMods WHERE Immunity < ?', (now,)) as cursor:
                 rows = await cursor.fetchall()
@@ -120,7 +120,7 @@ class Sniper():
         pointDeduction = 3
         now = datetime.now().timestamp()
 
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute('SELECT Guild, Owner FROM HotPotato WHERE Explosion < ?', (now,)) as cursor:
                 rows = await cursor.fetchall()
@@ -139,22 +139,22 @@ class Sniper():
     async def remove_expired_revenges(cls):
         now = datetime.now().timestamp()
 
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, now))
             await db.commit()
 
     async def give_potato(self, explosion):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('INSERT INTO HotPotato (Owner, Explosion) VALUES (?, ?)', (self.id, explosion))
             await db.commit()
 
     async def pass_potato(self, target):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('UPDATE HotPotato SET Owner = ? WHERE Owner = ? AND Guild = ?', (target.id, self.id, self.guild))
             await db.commit()
 
     async def register_self(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('INSERT OR IGNORE INTO Scores(UserID, Guild, Name) VALUES (?, ?, ?)', (self.id, self.guild, self.display_name))
             await db.execute('INSERT OR IGNORE INTO SnipingMods(UserID, Guild, Name) VALUES (?, ?, ?)', (self.id, self.guild, self.display_name))
 
@@ -246,7 +246,7 @@ class Sniper():
         scores_query = 'UPDATE Scores SET Name = ?, Points = ?, Snipes = ?, Deaths = ?, Respawn = ?, Revenge = ?, RevengeTime = ?, Killstreak = ?, KillstreakRecord = ? WHERE UserID = ? AND Guild = ?'
         snipingmods_query = 'UPDATE SnipingMods SET Name = ?, Multiplier = ?, MultiExpiration = ?, SmokeBomb = ?, Immunity = ? WHERE UserID = ? AND Guild = ?'
 
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute(scores_query, scores_info)
             await db.execute(snipingmods_query, snipingmods_info)
             await db.commit()

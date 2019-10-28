@@ -1,7 +1,7 @@
 import aiosqlite
 from datetime import datetime
 
-import cogs.utils.db as Database
+from cogs.utils.db import Database
 
 
 class SoapboxEntry:
@@ -34,7 +34,7 @@ class SoapboxEntry:
         instance = cls()
         instance.id = id
 
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute('SELECT * FROM Soapbox WHERE id = ?', (id,)) as cursor:
                 row = await cursor.fetchone()
@@ -51,7 +51,7 @@ class SoapboxEntry:
 
     @classmethod
     async def get_all(cls, guild):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute('SELECT * FROM Soapbox WHERE Guild = ? ORDER BY Date ASC', (guild,)) as cursor:
                 rows = await cursor.fetchall()
@@ -72,16 +72,16 @@ class SoapboxEntry:
         self.topic = self.topic if soapbox.topic is None else soapbox.topic
 
     async def commit_update(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('UPDATE Soapbox SET Presenter = ?, date = ?, topic = ? WHERE id = ? AND Guild = ?', (self.name, self.date.timestamp(), self.topic, self.id, self.guild))
             await db.commit()
 
     async def commit_delete(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('DELETE FROM Soapbox WHERE id = ?', (self.id,))
             await db.commit()
 
     async def commit_new(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('INSERT INTO Soapbox (Guild, Presenter, Topic, Date) VALUES (?, ?, ?, ?)', (self.guild, self.name, self.topic, self.date.timestamp()))
             await db.commit()

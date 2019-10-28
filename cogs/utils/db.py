@@ -1,23 +1,32 @@
 from enum import Enum
 
-LIVE_DATABASE = './data/database.db'
-DEV_DATABASE = './data/dev_database.db'
 
-DATABASE = DEV_DATABASE
-
-
-def switch_database(env):
-
-    global DATABASE
-    global LIVE_DATABASE
-    global DEV_DATABASE
-
-    if env == Environment.LIVE:
-        DATABASE = LIVE_DATABASE
-    elif env == Environment.DEV:
-        DATABASE = DEV_DATABASE
-
-
-class Environment (Enum):
+class Environment(Enum):
     DEV = 'dev'
     LIVE = 'live'
+
+
+class Database():
+    current_database = Environment.DEV
+
+    @staticmethod
+    def connection_string():
+        if Database.current_database == Environment.DEV:
+            return Database.dev_database()
+        elif Database.current_database == Environment.LIVE:
+            return Database.live_database()
+
+    @staticmethod
+    def live_database():
+        return './data/database.db'
+
+    @staticmethod
+    def dev_database():
+        return './data/dev_database.db'
+
+    @staticmethod
+    def switch_database(env):
+        if env == Environment.LIVE:
+            Database.current_database = Environment.LIVE
+        elif env == Environment.DEV:
+            Database.current_database = Environment.DEV

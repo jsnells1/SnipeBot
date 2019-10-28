@@ -3,7 +3,7 @@ import asyncio
 import discord
 import discord.ext.commands as commands
 
-import cogs.utils.db as Database
+from cogs.utils.db import Database
 from cogs.utils.sniper import Sniper
 
 
@@ -75,11 +75,8 @@ class Admin(commands.Cog):
 
     @commands.command(name='db_env', aliases=['env', 'environment'], hidden=True)
     @commands.has_role(item='Dev Team')
-    async def db_environment(self, ctx: commands.Context, env=None):
-        if Database.DATABASE == Database.DEV_DATABASE:
-            await ctx.send('**Dev**')
-        else:
-            await ctx.send('**Live**')
+    async def db_environment(self, ctx: commands.Context):
+        await ctx.send(f'**{Database.current_database.value.upper()}**')
 
     @commands.command(hidden=True)
     @commands.has_role(item='Dev Team')

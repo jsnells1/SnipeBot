@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import aiosqlite
 
-import cogs.utils.db as Database
+from cogs.utils.db import Database
 from cogs.utils.sniper import Sniper
 
 
@@ -14,7 +14,7 @@ class Reward():
 
     @classmethod
     async def from_database(cls, id: int):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute('SELECT * FROM CarePackageRwds WHERE id = ?', (id,)) as cursor:
                 row = await cursor.fetchone()
@@ -24,7 +24,7 @@ class Reward():
 
     @classmethod
     async def get_random(cls):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute('SELECT * FROM CarePackageRwds ORDER BY RANDOM() LIMIT 1') as cursor:
                 row = await cursor.fetchone()

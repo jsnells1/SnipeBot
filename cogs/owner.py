@@ -1,7 +1,7 @@
 import discord
 import discord.ext.commands as commands
 
-import cogs.utils.db as Database
+from cogs.utils.db import Database, Environment
 
 
 class Owner(commands.Cog):
@@ -16,15 +16,15 @@ class Owner(commands.Cog):
     @commands.command(name='backup_db', hidden=True)
     @commands.is_owner()
     async def backup_db(self, ctx: commands.Context):
-        dev_db = discord.File(fp=Database.DEV_DATABASE)
-        live_db = discord.File(fp=Database.LIVE_DATABASE)
+        dev_db = discord.File(fp=Database.dev_database())
+        live_db = discord.File(fp=Database.live_database())
 
         await ctx.author.send('', files=[dev_db, live_db])
 
     @commands.command(name='switchDB', usage='{dev | live}', hidden=True)
     @commands.is_owner()
-    async def switchDB(self, ctx: commands.Context, env: Database.Environment):
+    async def switchDB(self, ctx: commands.Context, env: Environment):
         Database.switch_database(env)
 
         await ctx.send('Database successfully changed.')
-        print('Database: ' + Database.DATABASE)
+        print('Database: ' + Database.connection_string())

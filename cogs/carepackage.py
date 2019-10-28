@@ -5,8 +5,8 @@ import aiosqlite
 import discord
 import discord.ext.commands as commands
 
-import cogs.utils.db as Database
 from cogs.utils.carepackage import Package
+from cogs.utils.db import Database
 from cogs.utils.rewards import Reward
 from cogs.utils.sniper import Sniper
 
@@ -53,7 +53,7 @@ class CarePackage(commands.Cog):
     @commands.command(name='get_rewards')
     async def get_carepackage_rewards(self, ctx: commands.Context):
         rewards = []
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             async with db.execute('SELECT Name, Description FROM CarePackageRwds') as cursor:
                 rewards = await cursor.fetchall()
 

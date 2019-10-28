@@ -8,8 +8,8 @@ import discord.ext.commands as commands
 from discord import utils
 from discord.ext import tasks
 
-import cogs.utils.db as Database
 from cogs.utils.carepackage import Package
+from cogs.utils.db import Database, Environment
 from cogs.utils.leaderboard import Leaderboard
 from cogs.utils.sniper import Sniper
 
@@ -31,7 +31,7 @@ class Snipes(commands.Cog):
 
     @tasks.loop(minutes=1.0)
     async def maintenance(self):
-        if Database.DATABASE == Database.DEV_DATABASE:
+        if Database.current_database == Environment.DEV:
             channel_name = 'snipebot-testing'
         else:
             channel_name = 'snipebot'

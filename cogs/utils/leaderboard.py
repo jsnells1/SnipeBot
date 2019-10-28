@@ -1,7 +1,7 @@
 import aiosqlite
 from tabulate import tabulate
 
-import cogs.utils.db as Database
+from cogs.utils.db import Database
 
 
 class NotLoadedException(Exception):
@@ -30,14 +30,14 @@ class Leaderboard():
         return leaderboard
 
     async def _load_user_count(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             async with db.execute('SELECT COUNT(rowid) FROM Scores') as cursor:
                 row = await cursor.fetchone()
 
                 self.users = row[0]
 
     async def _load_killstreak_record(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             query = 'SELECT Name, KillstreakRecord FROM Scores ORDER BY KillstreakRecord DESC LIMIT 1'
             async with db.execute(query) as cursor:
@@ -48,7 +48,7 @@ class Leaderboard():
                     self.killstreak_record = row['KillstreakRecord']
 
     async def _load_rows(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             query = 'SELECT UserID, Name, Points, Snipes, Deaths FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10'
             async with db.execute(query) as cursor:

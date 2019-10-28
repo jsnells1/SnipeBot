@@ -4,8 +4,8 @@ import json
 import logging
 import logging.handlers
 
-import cogs.utils.db as Database
 from bot import SnipeBot
+from cogs.utils.db import Database, Environment
 
 
 @contextlib.contextmanager
@@ -35,9 +35,9 @@ def main():
     parser.add_argument('-dev', action='store_true', help='use the dev database')
     args = parser.parse_args()
 
-    Database.switch_database(Database.Environment.LIVE)
+    Database.switch_database(Environment.LIVE)
     if args.dev:
-        Database.switch_database(Database.Environment.DEV)
+        Database.switch_database(Environment.DEV)
 
     with open('config.json') as config_file:
         config = json.load(config_file)

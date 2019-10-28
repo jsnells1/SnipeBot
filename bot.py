@@ -6,11 +6,11 @@ import discord.ext.commands as commands
 
 from cogs.admin import Admin
 from cogs.carepackage import CarePackage
+from cogs.help import CustomHelpCommand, Help
 from cogs.owner import Owner
 from cogs.snipe import Snipes
 from cogs.soapbox import Soapbox
-from cogs.utils import db
-from cogs.help import CustomHelpCommand, Help
+from cogs.utils.db import Database
 
 log = logging.getLogger(__name__)
 
@@ -57,8 +57,8 @@ class SnipeBot(commands.Bot):
             return await ctx.send(f'MissingRequiredArgument: {error}')
 
     async def on_ready(self):
-        log.info('Bot started: Database: ' + db.DATABASE)
-        print('Ready. Database: ' + db.DATABASE)
+        log.info('Bot started: Database: ' + Database.connection_string())
+        print('Ready. Database: ' + Database.connection_string())
 
     @commands.command()
     async def overview(self, ctx):
