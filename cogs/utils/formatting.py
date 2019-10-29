@@ -1,78 +1,70 @@
 from tabulate import tabulate
 
 
-def _joinListWithAnd(data):
-    if len(data) == 0:
-        return None
+class SnipeFormatter():
+    def __init__(self, **kwargs):
+        self.sniper = kwargs.get('sniper')
+        self.hits = kwargs.get('hits', [])
+        self.respawns = kwargs.get('respawns', [])
+        self.immunes = kwargs.get('immunes', [])
+        self.new_potato_owner = kwargs.get('new_potato_owner')
+        self.leader_hit = kwargs.get('leader_hit', False)
+        self.revenge_member = kwargs.get('revenge_member')
+        self.total_points = kwargs.get('total_points', 0)
 
-    if len(data) == 1:
-        return data[0]
+    @staticmethod
+    def _join_list_with_and(data):
+        if len(data) == 0:
+            return ''
 
-    return ', '.join(data[:-1]) + ' and ' + data[-1]
+        if len(data) == 1:
+            return data[0]
 
+        return f'{", ".join(data[:-1])} and {data[-1]}'
 
-def _getsnipetext(sniper=None, hits=[], respawns=[], immunes=[], errors=[], hasPotato=False, leaderHit=False,
-                  revengeHit=False, revengeMember=None, killstreak=0):
-    returnStr = ''
+    def _get_snipe_text(self):
+        result_string = ''
 
-    hits = [hit.display_name for hit in hits]
-    respawns = [respawn.display_name for respawn in respawns]
-    immunes = [immune.display_name for immune in immunes]
-    errors = [error.display_name for error in errors]
+        hits = [hit.display_name for hit in self.hits]
+        respawns = [respawn.display_name for respawn in self.respawns]
+        immunes = [immune.display_name for immune in self.immunes]
 
-    for hit in hits:
-        returnStr += f'{sniper.display_name}   ︻デ═一   {hit}\n'
+        for hit in hits:
+            result_string += f'{self.sniper.display_name}   ︻デ═一   {hit}\n'
 
-    if killstreak > 1:
-        returnStr += f'{sniper.display_name} is on a killstreak of {killstreak}!\n'
+        if self.sniper.killstreak > 1:
+            result_string += f'{self.sniper.display_name} is on a killstreak of {self.sniper.killstreak}!\n'
 
-    if hasPotato and len(hits) > 0:
-        returnStr += f'{sniper.display_name} has passed the potato to {hits[0]}! Get rid of it before it explodes!!!\n'
+        if self.new_potato_owner:
+            result_string += f'{self.sniper.display_name} has passed the potato to {self.new_potato_owner}! Get rid of it before it explodes!!!\n'
 
-    if leaderHit:
-        returnStr += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
+        if self.leader_hit:
+            result_string += 'NICE SHOT! The leader has been taken out! Enjoy 3 bonus points!\n'
 
-    if revengeHit:
-        returnStr += f'Revenge is so sweet! You got revenge on {revengeMember.display_name}! Enjoy 2 bonus points!\n'
+        if self.revenge_member:
+            result_string += f'Revenge is so sweet! You got revenge on {self.revenge_member}! Enjoy 2 bonus points!\n'
 
-    if len(respawns) > 0:
-        returnStr += f'{_joinListWithAnd(respawns)} was/were not hit because they\'re still respawning.\n'
+        if len(respawns) > 0:
+            result_string += f'{SnipeFormatter._join_list_with_and(respawns)} was/were not hit because they\'re still respawning.\n'
 
-    if len(immunes) > 0:
-        returnStr += f'{_joinListWithAnd(immunes)} was/were not hit because they\'re immune!\n'
+        if len(immunes) > 0:
+            result_string += f'{SnipeFormatter._join_list_with_and(immunes)} was/were not hit because they\'re immune!\n'
 
-    if len(errors) > 0:
-        returnStr += f'Error registering hit on {_joinListWithAnd(errors)}.\n'
+        return result_string
 
-    return returnStr
+    def _get_kill_summary(self):
+        killsummary = [['Kills', len(self.hits)]]
 
+        if self.leader_hit:
+            killsummary.append(['Leader Kill Points', '3'])
+        if self.revenge_member:
+            killsummary.append(['Revenge Kill Points', '2'])
 
-def _getKillSummary(hits=[], leaderHit=False, revengeHit=False, totalPoints=0, multiplier=1):
-    output = '```Kill Summary:\n\n'
+        killsummary.append(['Pre-Multiplier Total', self.total_points // self.sniper.multiplier])
+        killsummary.append(['Multiplier', f'x{self.sniper.multiplier}'])
+        killsummary.append(['Total Points', self.total_points])
 
-    killsummary = [['Kills', str(len(hits))]]
+        return f'```Kill Summary:\n\n{tabulate(killsummary, tablefmt="plain", colalign=("left", "right"))}```'
 
-    if leaderHit:
-        killsummary.append(['Leader Kill Points', '3'])
-    if revengeHit:
-        killsummary.append(['Revenge Kill Points', '2'])
-
-    killsummary.append(
-        ['Pre-Multiplier Total', str(int(totalPoints / multiplier))])
-    killsummary.append(['Multiplier', 'x' + str(multiplier)])
-    killsummary.append(['Total Points', str(totalPoints)])
-
-    return output + tabulate(killsummary, tablefmt='plain', colalign=('left', 'right')) + '```'
-
-
-def formatSnipeString(sniper=None, hits=[], respawns=[], immune=[], errors=[], hasPotato=False, leaderHit=False,
-                      revengeHit=False, revengeMember=None, totalPoints=0, multiplier=1, killstreak=0):
-    output = ''
-
-    output += _getsnipetext(sniper, hits, respawns, immune, errors, hasPotato, leaderHit,
-                            revengeHit, revengeMember, killstreak)
-
-    output += _getKillSummary(hits, leaderHit,
-                              revengeHit, totalPoints, multiplier)
-
-    return output
+    def formatted_output(self):
+        return f'{self._get_snipe_text()}{self._get_kill_summary()}'

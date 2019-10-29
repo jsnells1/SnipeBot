@@ -1,52 +1,84 @@
 import aiosqlite
-
 from tabulate import tabulate
-from discord.ext import commands
 
-import cogs.utils.db as Database
+from cogs.utils.db import Database
+
+
+class NotLoadedException(Exception):
+    pass
 
 
 class Leaderboard():
-    def __init__(self, ctx):
-        self.ctx = ctx
+    def __init__(self):
+        self.killstreak_record_holder = 'None'
+        self.killstreak_record = 'None'
+        self.users = 0
+        self.rows = None
 
-    async def get_highest_killstreak(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        self._loaded = False
+
+    @classmethod
+    async def load(cls):
+        leaderboard = cls()
+
+        await leaderboard._load_rows()
+        await leaderboard._load_killstreak_record()
+        await leaderboard._load_user_count()
+
+        leaderboard._loaded = True
+
+        return leaderboard
+
+    async def _load_user_count(self):
+        async with aiosqlite.connect(Database.connection_string()) as db:
+            async with db.execute('SELECT COUNT(rowid) FROM Scores') as cursor:
+                row = await cursor.fetchone()
+
+                self.users = row[0]
+
+    async def _load_killstreak_record(self):
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
-            query = 'SELECT UserID, KillstreakRecord FROM Scores ORDER BY KillstreakRecord DESC LIMIT 1'
+            query = 'SELECT Name, KillstreakRecord FROM Scores ORDER BY KillstreakRecord DESC LIMIT 1'
             async with db.execute(query) as cursor:
-                return await cursor.fetchone()
+                row = await cursor.fetchone()
 
-    async def get_leaderboard(self):
-        outputRows = [['Name', 'P', 'S', 'D']]
+                if row:
+                    self.killstreak_record_holder = row['Name'][0:8]
+                    self.killstreak_record = row['KillstreakRecord']
 
-        rows = await self.get_rows()
-        killstreak_info = await self.get_highest_killstreak()
+    async def _load_rows(self):
+        async with aiosqlite.connect(Database.connection_string()) as db:
+            db.row_factory = aiosqlite.Row
+            query = 'SELECT UserID, Name, Points, Snipes, Deaths FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10'
+            async with db.execute(query) as cursor:
+                self.rows = await cursor.fetchall()
 
-        killstreak_holder = 'None'
-        killstreak_record = 'None'
+    def get_leader_id(self):
+        if not self._loaded:
+            raise NotLoadedException('load method not called')
 
-        if killstreak_info is not None:
-            killstreak_holder = self.ctx.guild.get_member(killstreak_info['UserID']).display_name[0:8]
-            killstreak_record = str(killstreak_info['KillstreakRecord'])
+        if self.users == 0:
+            return None
 
-        for row in rows:
-            user = await commands.MemberConverter().convert(self.ctx, str(row['UserID']))
+        possible_leader = self.rows[0]
 
-            outputRows.append([user.display_name[0:8], str(row['Points']), str(row['Snipes']), str(row['Deaths'])])
+        if possible_leader['snipes'] == 0 and possible_leader['deaths'] == 0 and possible_leader['points'] != 0:
+            return None
 
-        records = [['Record', 'User', '']]
+        return self.rows[0]['UserID']
 
-        records.append(['Streak', killstreak_holder, killstreak_record])
+    def display_leaderboard(self):
+        if not self._loaded:
+            raise NotLoadedException('load method not yet called')
 
-        output = tabulate(records, headers='firstrow', tablefmt='fancy_grid') + '\n\n'
-        output += tabulate(outputRows, headers='firstrow', tablefmt='fancy_grid')
+        records_header = ['Record', 'User', '']
+        records = [['Streak', self.killstreak_record_holder, self.killstreak_record]]
+
+        leaderboard_headers = ['Name', 'P', 'S', 'D']
+        leaderboard_rows = [[row['Name'][0:8], row['Points'], row['Snipes'], row['Deaths']] for row in self.rows]
+
+        output = f'{tabulate(records, headers=records_header, tablefmt="fancy_grid")}\n\n'
+        output += 'P=Points, S=Snipes, D=Deaths\n'
+        output += tabulate(leaderboard_rows, headers=leaderboard_headers, tablefmt='fancy_grid')
         return output
-
-    async def get_rows(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            db.row_factory = aiosqlite.Row
-            query = 'SELECT UserID, Points, Snipes, Deaths FROM Scores ORDER BY Points DESC, Snipes DESC, Deaths ASC LIMIT 10'
-            async with db.execute(query) as cursor:
-                rows = await cursor.fetchall()
-                return rows

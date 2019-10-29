@@ -5,9 +5,8 @@ import aiosqlite
 import discord
 import discord.ext.commands as commands
 
-import cogs.utils.db as Database
-import cogs.utils.rewards as Rewards
 from cogs.utils.carepackage import Package
+from cogs.utils.db import Database
 from cogs.utils.rewards import Reward
 from cogs.utils.sniper import Sniper
 
@@ -54,7 +53,7 @@ class CarePackage(commands.Cog):
     @commands.command(name='get_rewards')
     async def get_carepackage_rewards(self, ctx: commands.Context):
         rewards = []
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             async with db.execute('SELECT Name, Description FROM CarePackageRwds') as cursor:
                 rewards = await cursor.fetchall()
 
@@ -93,7 +92,7 @@ class CarePackage(commands.Cog):
             return await ctx.send(f'Sorry {ctx.author.display_name}, that is not the keyword.')
 
         reward = await Reward.get_random()
-        msg = await Rewards.get_reward(reward.id, ctx.author)
+        msg = await reward.redeem(ctx.author)
 
         await ctx.send(f'{ctx.author.display_name} guessed the keyword correctly! You open the care package and earn {msg}!')
 
@@ -101,6 +100,6 @@ class CarePackage(commands.Cog):
     @commands.has_role(item='Dev Team')
     async def give_carepackage(self, ctx: commands.Context, member: discord.Member):
         reward = await Reward.get_random()
-        msg = await Rewards.get_reward(reward.id, ctx.author)
+        msg = await reward.redeem(member)
 
         await ctx.send(f'{member.display_name} opens the care package and earn {msg}!')

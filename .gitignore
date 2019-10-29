@@ -111,3 +111,4 @@ config.json
 
 # log files
 **/log/
+*.log

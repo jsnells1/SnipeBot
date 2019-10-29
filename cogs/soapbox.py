@@ -1,7 +1,6 @@
 import asyncio
 from datetime import datetime
 
-import discord
 import discord.ext.commands as commands
 from tabulate import tabulate
 
@@ -120,7 +119,7 @@ class Soapbox(commands.Cog):
 
         try:
             response = await self.bot.wait_for('message', check=check, timeout=10)
-        except:
+        except Exception:
             await ctx.send("Timeout reached. Operation aborted")
             return
 

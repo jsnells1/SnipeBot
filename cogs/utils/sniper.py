@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 import aiosqlite
 import discord
 
-import cogs.utils.db as Database
-from cogs.utils.formatting import formatSnipeString
+from cogs.utils.db import Database
+from cogs.utils.formatting import SnipeFormatter
 from cogs.utils.leaderboard import Leaderboard
 
 
@@ -26,9 +26,11 @@ class Sniper():
         self.smokebomb = kwargs.get('smokebomb', 0)
         self.immunity = kwargs.get('immunity')
 
+        self.has_potato = False
+
     @classmethod
     async def exists(cls, id, guild):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             async with db.execute('SELECT 1 FROM Scores WHERE UserID = ? AND Guild = ?', (id, guild)) as cursor:
                 row = await cursor.fetchone()
 
@@ -51,7 +53,7 @@ class Sniper():
         if register:
             await sniper.register_self()
 
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             db.row_factory = aiosqlite.Row
             query = 'SELECT * FROM Scores s LEFT JOIN SnipingMods sm ON sm.UserID = s.UserID AND sm.Guild = s.Guild WHERE s.UserID = ? AND s.Guild = ?'
             async with db.execute(query, (id, guild)) as cursor:
@@ -73,155 +75,167 @@ class Sniper():
                 sniper.smokebomb = row['SmokeBomb']
                 sniper.immunity = row['Immunity']
 
+            query = 'SELECT 1 FROM HotPotato WHERE Owner = ? AND Guild = ? LIMIT 1'
+            async with db.execute(query, (id, guild)) as cursor:
+                sniper.has_potato = await cursor.fetchone() is not None
+
         return sniper
 
     @classmethod
     async def remove_user(cls, id, guild):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('DELETE FROM Scores WHERE UserID = ? AND Guild = ?', (id, guild))
             await db.execute('DELETE FROM SnipingMods WHERE UserID = ? AND Guild = ?', (id, guild))
 
             await db.commit()
 
-    async def add_snipe(self, target):
-        try:
-            await self.register_self()
-            await target.register_self()
-        except:
-            return False
+    @classmethod
+    async def get_respawns(cls):
+        async with aiosqlite.connect(Database.connection_string()) as db:
+            date = datetime.now().timestamp()
+            async with db.execute('SELECT Guild, UserID FROM Scores WHERE Respawn < ?', (date,)) as cursor:
+                rows = await cursor.fetchall()
 
-        try:
-            async with aiosqlite.connect(Database.DATABASE) as db:
-                await db.execute('UPDATE Scores SET Snipes = Snipes + 1, Respawn = ? WHERE UserID = ?', (None, self.id))
-
-                respawn = datetime.now() + timedelta(hours=2)
-                revenge = datetime.now() + timedelta(hours=3, minutes=30)
-
-                await db.execute('UPDATE Scores SET Deaths = Deaths + 1, Killstreak = 0, Respawn = ?, Revenge = ?, RevengeTime = ? WHERE UserID = ?',
-                                 (respawn.timestamp(), self.id, revenge.timestamp(), target.id))
-
+                await db.execute('UPDATE Scores SET Respawn = ? WHERE Respawn < ?', (None, date))
                 await db.commit()
 
-                self.snipes += 1
-                self.respawn = None
-                target.deaths += 1
-                target.killstreak = 0
-                target.respawn = respawn
-                target.revenge = self.id
-                target.revenge_time = revenge
+                return rows
 
-            return True
+    @classmethod
+    async def get_expired_immunes(cls):
+        now = datetime.now().timestamp()
+        async with aiosqlite.connect(Database.connection_string()) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute('SELECT Guild, UserID FROM SnipingMods WHERE Immunity < ?', (now,)) as cursor:
+                rows = await cursor.fetchall()
 
-        except:
-            return False
+            if len(rows) > 0:
+                await db.execute('UPDATE SnipingMods SET Immunity = ? WHERE Immunity < ?', (None, now, ))
+                await db.commit()
+
+            return rows
+
+    @classmethod
+    async def get_exploded_potatoes(cls):
+        pointDeduction = 3
+        now = datetime.now().timestamp()
+
+        async with aiosqlite.connect(Database.connection_string()) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute('SELECT Guild, Owner FROM HotPotato WHERE Explosion < ?', (now,)) as cursor:
+                rows = await cursor.fetchall()
+
+            if len(rows) > 0:
+                await db.execute('DELETE FROM HotPotato WHERE Explosion < ?', (now,))
+
+            for row in rows:
+                await db.execute('UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID =  ?', (pointDeduction, row['Owner']))
+
+            await db.commit()
+
+            return rows
+
+    @classmethod
+    async def remove_expired_revenges(cls):
+        now = datetime.now().timestamp()
+
+        async with aiosqlite.connect(Database.connection_string()) as db:
+            await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, now))
+            await db.commit()
 
     async def give_potato(self, explosion):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('INSERT INTO HotPotato (Owner, Explosion) VALUES (?, ?)', (self.id, explosion))
             await db.commit()
 
-    async def has_potato(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            query = 'SELECT 1 FROM HotPotato WHERE Owner = ? AND Guild = ? LIMIT 1'
-            async with db.execute(query, (self.id, self.guild)) as cursor:
-                return await cursor.fetchone() is not None
-
     async def pass_potato(self, target):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE HotPotato SET Owner = ? WHERE Owner = ? AND Guild = ?', (self.id, target.id, self.guild))
+        async with aiosqlite.connect(Database.connection_string()) as db:
+            await db.execute('UPDATE HotPotato SET Owner = ? WHERE Owner = ? AND Guild = ?', (target.id, self.id, self.guild))
             await db.commit()
 
     async def register_self(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute('INSERT OR IGNORE INTO Scores(UserID, Guild, Name) VALUES (?, ?, ?)', (self.id, self.guild, self.display_name))
             await db.execute('INSERT OR IGNORE INTO SnipingMods(UserID, Guild, Name) VALUES (?, ?, ?)', (self.id, self.guild, self.display_name))
 
             await db.commit()
 
-    async def reset_revenge(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE UserID = ?', (None, None, self.id))
-            await db.commit()
-
-            self.revenge = None
-            self.revenge_time = None
-
-    async def set_multiplier(self, multiplier, expiration=None):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE SnipingMods SET Multiplier = ?, MultiExpiration = ? WHERE UserID = ? AND Guild = ?', (multiplier, expiration, self.id, self.guild))
-            await db.commit()
-
-    async def set_immunity(self, expiration):
-        self.immunity = expiration
-        await self.update()
-
     async def snipe(self, ctx, targets):
         hits = []
         immune = []
         respawns = []
-        errors = []
 
         # Convert targets to list of Sniper objects, ignoring bots
         targets = [await Sniper.from_database(target.id, ctx.guild.id, target.display_name, register=True) for target in targets if not target.bot]
 
-        leaderboard = await Leaderboard(ctx).get_rows()
+        leaderboard = await Leaderboard.load()
+        leader_id = leaderboard.get_leader_id()
 
-        leader_id = None
-        if len(leaderboard) > 0:
-            # Hack
-            if leaderboard[0]['snipes'] != 0 or leaderboard[0]['deaths'] != 0 or leaderboard[0]['points'] != 0:
-                leader_id = leaderboard[0]['UserID']
+        bonus_points = 0
 
-        bonusPoints = 0
+        leader_hit = False
 
-        leaderHit = False
-        revengeHit = False
+        respawn = (datetime.now() + timedelta(hours=2)).timestamp()
+        revenge = (datetime.now() + timedelta(hours=3, minutes=30)).timestamp()
 
-        for loser in targets:
+        revenge_name = None
+
+        for target in targets:
 
             # Ignore immune users
-            if loser.is_immune():
-                immune.append(loser)
+            if target.is_immune():
+                immune.append(target)
                 continue
 
             # Ignore respawning users
-            if loser.is_respawning():
-                respawns.append(loser)
+            if target.is_respawning():
+                respawns.append(target)
                 continue
 
-            # Try to register the snipe
-            if await self.add_snipe(loser):
-                if loser.id == leader_id:
-                    leaderHit = True
-                    bonusPoints += 3
+            self.snipes += 1
+            self.respawn = None
+            target.deaths += 1
+            target.killstreak = 0
+            target.respawn = respawn
+            target.revenge = self.id
+            target.revenge_time = revenge
 
-                if loser.id == self.revenge:
-                    revengeHit = True
-                    bonusPoints += 2
-                    await self.reset_revenge()
+            if target.id == leader_id:
+                leader_hit = True
+                bonus_points += 3
 
-                hits.append(loser)
-            else:
-                errors.append(loser)
+            if target.id == self.revenge:
+                revenge_name = target.display_name
+                bonus_points += 2
 
-        hasPotato = False
-        if len(hits) > 0:
-            await self.update_killstreak(len(hits))
-            hasPotato = await self.has_potato()
-            if hasPotato:
+                # Make sure to reset revenge
+                self.revenge = None
+                self.revenge_time = None
+
+            hits.append(target)
+
+            await target.update()
+
+        new_potato_owner = None
+        num_hits = len(hits)
+        if num_hits > 0:
+            self.killstreak += num_hits
+            self.killstreak_record = max(self.killstreak_record, self.killstreak)
+
+            if self.has_potato:
                 await self.pass_potato(hits[0])
+                new_potato_owner = hits[0]
 
-        killstreak = self.killstreak
         # Add the bonus points to the number of hits (1 point per hit) then multiply by the user's multiplier
-        totalPoints = (bonusPoints + len(hits)) * self.multiplier
+        total_points = (bonus_points + len(hits)) * self.multiplier
         # Add the points to the user in the database
-        self.points += totalPoints
+        self.points += total_points
         await self.update()
-        # Get the discord user for the revenge target, will return None if not found or if revenge is None
-        revengeMember = ctx.guild.get_member(self.revenge)
 
-        output = formatSnipeString(sniper=self, hits=hits, respawns=respawns, immune=immune, errors=errors, hasPotato=hasPotato, leaderHit=leaderHit,
-                                   revengeHit=revengeHit, killstreak=killstreak, revengeMember=revengeMember, totalPoints=totalPoints, multiplier=self.multiplier)
+        formatter = SnipeFormatter(sniper=self, hits=hits, respawns=respawns, immunes=immune, new_potato_owner=new_potato_owner,
+                                   leader_hit=leader_hit, revenge_member=revenge_name, total_points=total_points)
+
+        output = formatter.formatted_output()
 
         return output
 
@@ -232,26 +246,17 @@ class Sniper():
         scores_query = 'UPDATE Scores SET Name = ?, Points = ?, Snipes = ?, Deaths = ?, Respawn = ?, Revenge = ?, RevengeTime = ?, Killstreak = ?, KillstreakRecord = ? WHERE UserID = ? AND Guild = ?'
         snipingmods_query = 'UPDATE SnipingMods SET Name = ?, Multiplier = ?, MultiExpiration = ?, SmokeBomb = ?, Immunity = ? WHERE UserID = ? AND Guild = ?'
 
-        async with aiosqlite.connect(Database.DATABASE) as db:
+        async with aiosqlite.connect(Database.connection_string()) as db:
             await db.execute(scores_query, scores_info)
             await db.execute(snipingmods_query, snipingmods_info)
             await db.commit()
-
-    async def update_killstreak(self, kills):
-        killstreak_record = max(self.killstreak + kills, self.killstreak_record)
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            await db.execute('UPDATE Scores SET Killstreak = Killstreak + ?, KillstreakRecord = ? WHERE UserID = ?', (kills, killstreak_record, self.id))
-            await db.commit()
-
-        self.killstreak_record = killstreak_record
-        self.killstreak += kills
 
     async def use_smokebomb(self):
         if self.smokebomb > 0:
             self.smokebomb -= 1
             expiration = datetime.now() + timedelta(hours=3)
-
-            await self.set_immunity(expiration.timestamp())
+            self.immunity = expiration.timestamp()
+            await self.update()
 
     def is_immune(self):
         return self.immunity and self.immunity > datetime.now().timestamp()

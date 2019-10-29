@@ -8,8 +8,7 @@
             "program": "${workspaceFolder}/startup.py",
             "console": "integratedTerminal",
             "args": [
-                "-env",
-                "dev"
+                "-dev"
             ]
         },
         {
@@ -17,11 +16,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/startup.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-env",
-                "live"
-            ]
+            "console": "integratedTerminal"
         }
     ]
 }

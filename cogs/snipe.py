@@ -3,14 +3,13 @@ import collections
 import logging
 from datetime import datetime
 
-import aiosqlite
 import discord
 import discord.ext.commands as commands
 from discord import utils
 from discord.ext import tasks
 
-import cogs.utils.db as Database
 from cogs.utils.carepackage import Package
+from cogs.utils.db import Database, Environment
 from cogs.utils.leaderboard import Leaderboard
 from cogs.utils.sniper import Sniper
 
@@ -18,11 +17,15 @@ log = logging.getLogger(__name__)
 
 
 class Snipes(commands.Cog):
-    def __init__(self, bot, day, begin, end):
+    def __init__(self, bot):
         self.bot = bot
-        self.club_day = day
-        self.club_start = begin
-        self.club_end = end
+
+        club_info = bot.config['club_time']
+
+        self.club_day = club_info.get('day_of_week', -1)
+        self.club_start = club_info.get('start_hour', -1)
+        self.club_end = club_info.get('stop_hour', -1)
+
         self.maintenance.start()
 
         with open('whitelist', 'r') as f:
@@ -30,73 +33,20 @@ class Snipes(commands.Cog):
 
         log.info(f'Whitelisted users: {self.whitelist}')
 
-    async def check_exploded_potatoes(self):
-        pointDeduction = 3
-        now = datetime.now().timestamp()
-
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            db.row_factory = aiosqlite.Row
-            async with db.execute('SELECT Guild, Owner FROM HotPotato WHERE Explosion < ?', (now,)) as cursor:
-                rows = await cursor.fetchall()
-
-            if len(rows) > 0:
-                await db.execute('DELETE FROM HotPotato WHERE Explosion < ?', (now,))
-
-            for row in rows:
-                await db.execute('UPDATE Scores SET Points = MAX(0, Points - ?), Deaths = Deaths + 1 WHERE UserID =  ?', (pointDeduction, row['Owner']))
-
-            await db.commit()
-
-            return rows
-
-    async def get_expired_immunes(self):
-        now = datetime.now().timestamp()
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            db.row_factory = aiosqlite.Row
-            async with db.execute('SELECT Guild, UserID FROM SnipingMods WHERE Immunity < ?', (now,)) as cursor:
-                rows = await cursor.fetchall()
-
-            if len(rows) > 0:
-                await db.execute('UPDATE SnipingMods SET Immunity = ? WHERE Immunity < ?', (None, now, ))
-                await db.commit()
-
-            return rows
-
-    async def get_all_respawns(self):
-        async with aiosqlite.connect(Database.DATABASE) as db:
-            date = datetime.now().timestamp()
-            async with db.execute('SELECT Guild, UserID FROM Scores WHERE Respawn < ?', (date,)) as cursor:
-                rows = await cursor.fetchall()
-
-                await db.execute('UPDATE Scores SET Respawn = ? WHERE Respawn < ?', (None, date))
-                await db.commit()
-
-                return rows
-
-    async def remove_expired_revenges(self):
-        today = datetime.now().timestamp()
-
-        try:
-            async with aiosqlite.connect(Database.DATABASE) as db:
-                await db.execute('UPDATE Scores SET Revenge = ?, RevengeTime = ? WHERE RevengeTime < ?', (None, None, today))
-                await db.commit()
-        except:
-            log.exception('Error removing expired revenges')
-
     @tasks.loop(minutes=1.0)
     async def maintenance(self):
-        if Database.DATABASE == Database.DEV_DATABASE:
+        if Database.current_database == Environment.DEV:
             channel_name = 'snipebot-testing'
         else:
             channel_name = 'snipebot'
 
         # Silently remove revenge targets that have expired
-        await self.remove_expired_revenges()
+        await Sniper.remove_expired_revenges()
 
         # Get the list of respawns, spud explosions, immunity expiration, and carepackage expirations
-        respawns = await self.get_all_respawns()
-        explosions = await self.check_exploded_potatoes()
-        expirations = await self.get_expired_immunes()
+        respawns = await Sniper.get_respawns()
+        explosions = await Sniper.get_exploded_potatoes()
+        expirations = await Sniper.get_expired_immunes()
         expired_carepackages = await Package.remove_expired()
 
         # Dictionary of guild_id, messages_to_send pairs
@@ -150,8 +100,7 @@ class Snipes(commands.Cog):
     async def before_maintenance(self):
         await self.bot.wait_until_ready()
 
-    # region Register Snipes
-    @commands.command(brief='Registers a snipe from the calling user to the mentioned user', usage='@TargetUser @TargetUser',
+    @commands.command(brief='Registers a snipe on all mentioned users', usage='@TargetUser @TargetUser',
                       help='Registers a snipe from the calling user to the mentioned user.\nBoth the calling and mentioned users will be created if not already.')
     async def snipe(self, ctx: commands.Context):
 
@@ -160,9 +109,12 @@ class Snipes(commands.Cog):
         if 'snipebot' not in ctx.channel.name:
             return await ctx.send('Please use the snipebot channel for sniping :)')
 
+        if ctx.author.id in self.whitelist:
+            return await ctx.send('You cannot snipe while on the whitelist.')
+
         today = datetime.now()
 
-        if today.weekday() == self.club_day and today.hour >= self.club_start and today.hour < self.club_end:
+        if today.weekday() == self.club_day and (self.club_start <= today.hour < self.club_end):
             return await ctx.send(f'Sniping disabled during club hours: {calendar.day_name[self.club_day]} from {self.club_start}:00 to {self.club_end}:00 (Military Time)')
 
         if len(targets) == 0:
@@ -192,26 +144,34 @@ class Snipes(commands.Cog):
         sniper = await Sniper.from_database(sniper.id, ctx.guild.id, sniper.display_name, register=True)
 
         await ctx.send(await sniper.snipe(ctx, targets))
-    # endregion
 
     # Returns the current Leaderboard
-    @commands.command(brief='Returns the Top 10 users sorted by snipes')
+    @commands.command(help='Returns the Top 10 users sorted by snipes')
     async def leaderboard(self, ctx: commands.Context):
-        output = await Leaderboard(ctx).get_leaderboard()
+        leaderboard = await Leaderboard.load()
+
+        output = leaderboard.display_leaderboard()
+
         await ctx.send(f'```{output}```')
 
     # Adds are removes the user from the whitelist
-    @commands.command(name='sbwhitelist')
+    @commands.command(name='sbwhitelist', help='Toggles the user\'s presence on the sniping whitelist. When on the whitelist, you cannot snipe or be sniped')
     async def toggle_whitelist(self, ctx: commands.Context):
         user = ctx.author.id
 
         if user in self.whitelist:
             self.whitelist.remove(user)
-            await ctx.send('```You\'ve been removed from the whitelist```')
+            await ctx.send('You\'ve been **removed** from the whitelist')
         else:
             self.whitelist.append(user)
-            await ctx.send('```You\'ve been added to the whitelist```')
+            await ctx.send('You\'ve been **added** to the whitelist')
 
         with open('whitelist', 'w') as f:
             for i in self.whitelist:
                 f.write(f'{i}\n')
+
+    @commands.command(name='getwhitelist', help='Lists all users currently on the whitelist')
+    async def get_whitelist(self, ctx: commands.Context):
+        users = [user.display_name for user in (ctx.guild.get_member(id) for id in self.whitelist) if user is not None]
+
+        await ctx.send(f"Whitelisted users: {', '.join(users)}")
