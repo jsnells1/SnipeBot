@@ -24,14 +24,8 @@ class SnipeBot(commands.Bot):
 
         self.config = config
 
-        club_info = config['club_time']
-
-        day = club_info.get('day_of_week', -1)
-        start = club_info.get('start_hour', -1)
-        end = club_info.get('stop_hour', -1)
-
         self.add_cog(Soapbox(self))
-        self.add_cog(Snipes(self, day, start, end))
+        self.add_cog(Snipes(self))
         self.add_cog(Admin(self))
         self.add_cog(Owner(self))
         self.add_cog(CarePackage(self))

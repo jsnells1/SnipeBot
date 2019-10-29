@@ -17,11 +17,15 @@ log = logging.getLogger(__name__)
 
 
 class Snipes(commands.Cog):
-    def __init__(self, bot, day, begin, end):
+    def __init__(self, bot):
         self.bot = bot
-        self.club_day = day
-        self.club_start = begin
-        self.club_end = end
+
+        club_info = bot.config['club_time']
+
+        self.club_day = club_info.get('day_of_week', -1)
+        self.club_start = club_info.get('start_hour', -1)
+        self.club_end = club_info.get('stop_hour', -1)
+
         self.maintenance.start()
 
         with open('whitelist', 'r') as f:
